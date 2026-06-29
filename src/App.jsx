@@ -29,8 +29,8 @@ const fallbackProducts = [
 ];
 
 const productImages = Object.fromEntries(fallbackProducts.map((product) => [product.id, product.image]));
-const categories = ["Todos", "Conjuntos", "Camisetas", "Selecciones", "Clubes"];
-const appVersion = "1.4.0";
+const categories = ["Todos", "Conjuntos", "Camisetas", "Selecciones", "Clubes", "Accesorios"];
+const appVersion = "1.4.1";
 const apiUrl = import.meta.env.VITE_API_URL || "/api";
 const formatter = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
 const availableSizes = ["4", "6", "8", "10", "12", "14", "S", "M", "L", "XL"];
@@ -182,6 +182,12 @@ export default function App() {
   }, [activeProducts, currentPath]);
 
   const isAdminRoute = currentPath === "/admin";
+  const isRegisterRoute = currentPath === "/registro";
+
+  useEffect(() => {
+    document.body.classList.toggle("has-open-layer", isCartOpen || isMenuOpen);
+    return () => document.body.classList.remove("has-open-layer");
+  }, [isCartOpen, isMenuOpen]);
 
   function addToCart(productId) {
     setCheckoutStatus({ state: "idle", message: "" });
@@ -204,6 +210,23 @@ export default function App() {
     window.history.pushState({}, "", path);
     setCurrentPath(path);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function navigateToSection(path, sectionId) {
+    navigateTo(path);
+    window.setTimeout(() => document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth" }), 100);
+  }
+
+  function searchFromMobile(value) {
+    setQuery(value);
+    setCategory("Todos");
+  }
+
+  function openMobileCategory(nextCategory) {
+    setQuery("");
+    setCategory(nextCategory);
+    setMenuOpen(false);
+    navigateToSection("/", "productos");
   }
 
   function updateUserForm(field, value) {
@@ -520,8 +543,8 @@ export default function App() {
           </label>
 
           <div className="header-actions" aria-label="Accesos rapidos">
-            <a href="#cuenta" aria-label="Favoritos"><Heart size={24} /><span>Favoritos</span></a>
-            <a href="#cuenta" aria-label="Mi cuenta"><UserRound size={23} /><span>Mi cuenta</span></a>
+            <a href="/registro" aria-label="Favoritos" onClick={(event) => { event.preventDefault(); navigateTo("/registro"); }}><Heart size={24} /><span>Favoritos</span></a>
+            <a href="/registro" aria-label="Mi cuenta" onClick={(event) => { event.preventDefault(); navigateTo("/registro"); }}><UserRound size={23} /><span>Mi cuenta</span></a>
             <a href="#contacto" aria-label="Tiendas"><Home size={23} /><span>Tiendas</span></a>
             <button className="header-cart" type="button" aria-label="Abrir carrito" onClick={() => setCartOpen(true)}>
               <ShoppingBag size={24} />
@@ -546,8 +569,8 @@ export default function App() {
         </nav>
       </header>
 
-      <main id={isAdminRoute ? "admin" : "inicio"}>
-        {!isAdminRoute && (
+      <main id={isAdminRoute ? "admin" : isRegisterRoute ? "registro" : "inicio"}>
+        {!isAdminRoute && !isRegisterRoute && (
           <>
         <section className="hero" style={{ "--hero-image": `url(${heroImage})` }}>
           <div className="hero-copy">
@@ -780,8 +803,7 @@ export default function App() {
         </section>
         )}
 
-        {!isAdminRoute && (
-          <>
+        {isRegisterRoute && (
         <section className="account-section" id="cuenta">
           <div className="section-heading">
             <div>
@@ -809,7 +831,9 @@ export default function App() {
             </div>
           </div>
         </section>
+        )}
 
+        {!isAdminRoute && !isRegisterRoute && (
         <section className="contact-band" id="contacto">
           <div>
             <p className="eyebrow">AyRe team</p>
@@ -820,7 +844,6 @@ export default function App() {
             <button type="submit">Sumarme</button>
           </form>
         </section>
-          </>
         )}
       </main>
 
@@ -949,24 +972,31 @@ export default function App() {
 
         <label className="mobile-search">
           <Search size={20} />
-          <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="Buscar" />
+          <input value={query} onChange={(event) => searchFromMobile(event.target.value)} type="search" placeholder="Buscar productos" />
         </label>
 
-        <img className="mobile-menu-logo" src={logoAyre} alt="AyRe" />
+        {query.trim() && (
+          <div className="mobile-search-results" aria-live="polite">
+            {visibleProducts.slice(0, 5).map((product) => (
+              <button type="button" key={`mobile-result-${product.id}`} onClick={() => { setMenuOpen(false); navigateTo(`/producto/${product.id}`); }}>
+                <img src={product.image} alt="" />
+                <span>{product.name}</span>
+                <strong>{formatter.format(product.price)}</strong>
+              </button>
+            ))}
+            {!visibleProducts.length && <p>No encontramos productos.</p>}
+          </div>
+        )}
 
         <nav className="mobile-links">
-          <a href="#productos" onClick={() => setMenuOpen(false)}>Camisetas mundialistas</a>
-          <a href="#productos" onClick={() => setMenuOpen(false)}>Selecciones <Plus size={19} /></a>
-          <a href="#productos" onClick={() => setMenuOpen(false)}>Clubes <Plus size={19} /></a>
-          <a href="#productos" onClick={() => setMenuOpen(false)}>Conjuntos deportivos <Plus size={19} /></a>
-            <a href="#coleccion" onClick={() => setMenuOpen(false)}>AyRe</a>
-            <a href="#contacto" onClick={() => setMenuOpen(false)}>Contacto</a>
-            <a href="/admin" target="_blank" rel="noreferrer" onClick={() => setMenuOpen(false)}>Admin</a>
+          <a href="#productos" onClick={(event) => { event.preventDefault(); openMobileCategory("Todos"); }}>Indumentaria</a>
+          <a href="#productos" onClick={(event) => { event.preventDefault(); openMobileCategory("Accesorios"); }}>Accesorios</a>
+          <a href="/registro" onClick={(event) => { event.preventDefault(); setMenuOpen(false); navigateTo("/registro"); }}>Registro</a>
           </nav>
 
         <div className="mobile-account">
           <UserRound size={21} />
-          <a href="#contacto" onClick={() => setMenuOpen(false)}>Cuenta</a>
+          <a href="/registro" onClick={(event) => { event.preventDefault(); setMenuOpen(false); navigateTo("/registro"); }}>Mi cuenta</a>
         </div>
       </aside>
 
