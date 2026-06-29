@@ -551,10 +551,54 @@ h2 { margin-bottom: 0; font-size: clamp(1.9rem, 3.5vw, 3.15rem); font-weight: 62
 .cart-line img { width: 68px; height: 68px; border-radius: 8px; object-fit: cover; }
 .cart-line h3 { margin: 0 0 6px; font-size: 1rem; }
 .cart-line p { margin: 0; color: var(--muted); }
+.line-size {
+  display: grid;
+  grid-template-columns: auto minmax(86px, 120px);
+  align-items: center;
+  gap: 8px;
+  margin-top: 9px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+.line-size select {
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0 10px;
+  background: var(--paper);
+  color: var(--ink);
+  outline: 0;
+}
 .qty-controls { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
 .qty-controls button { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: var(--paper); cursor: pointer; }
 .cart-footer { display: grid; gap: 16px; border-top: 1px solid var(--line); border-bottom: 0; }
-.cart-total { display: flex; justify-content: space-between; font-size: 1.15rem; }
+.checkout-summary {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffaf4;
+}
+.checkout-summary div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--muted);
+  font-size: 0.94rem;
+}
+.checkout-summary strong {
+  color: var(--ink);
+}
+.checkout-summary p {
+  margin: 4px 0 0;
+  color: var(--clay);
+  font-size: 0.82rem;
+}
+.cart-total { padding-top: 8px; border-top: 1px solid var(--line); font-size: 1.15rem !important; }
+.cart-total span,
+.cart-total strong { color: var(--ink) !important; }
 .checkout-button { width: 100%; }
 .checkout-form {
   display: grid;
@@ -610,6 +654,27 @@ h2 { margin-bottom: 0; font-size: clamp(1.9rem, 3.5vw, 3.15rem); font-weight: 62
 .checkout-message.loading {
   background: rgba(155, 115, 80, 0.12);
   color: var(--clay);
+}
+.payment-help {
+  margin: -4px 0 2px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+.checkout-check {
+  grid-template-columns: auto 1fr !important;
+  color: var(--muted);
+}
+.whatsapp-checkout {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(111, 137, 127, 0.34);
+  border-radius: 999px;
+  background: rgba(111, 137, 127, 0.1);
+  color: #3b5a50;
+  font-weight: 650;
 }
 .checkout-button:disabled {
   cursor: not-allowed;

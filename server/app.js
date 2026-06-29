@@ -11,6 +11,8 @@ import { attachPurchaseToUser, getUserByEmail, registerUser, setFavorite } from 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const clientDistPath = path.resolve(__dirname, "../dist");
+const freeShippingThreshold = 60000;
+const shippingCost = 4500;
 
 export function createApp() {
   const app = express();
@@ -160,8 +162,9 @@ export function createApp() {
       const orderItems = await Promise.all(items.map(async (item) => {
         const product = await getProductById(item.id);
         const quantity = Number(item.quantity || 0);
+        const size = String(item.size || "").trim();
 
-        if (!product || quantity < 1) {
+        if (!product || quantity < 1 || !size) {
           return null;
         }
 
@@ -169,30 +172,36 @@ export function createApp() {
           id: product.id,
           name: product.name,
           quantity,
+          size,
           unitPrice: product.price,
           subtotal: product.price * quantity,
         };
       }));
 
       if (orderItems.some((item) => item === null)) {
-        response.status(400).json({ message: "Hay productos invalidos en el pedido." });
+        response.status(400).json({ message: "Hay productos invalidos o sin talle en el pedido." });
         return;
       }
 
-      const total = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
+      const subtotal = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
+      const calculatedShipping = customer.delivery === "Envio a domicilio" && subtotal < freeShippingThreshold ? shippingCost : 0;
+      const total = subtotal + calculatedShipping;
       const result = await createOrder({
         customer: {
           name: String(customer.name).trim(),
           phone: String(customer.phone).trim(),
           email: String(customer.email || "").trim(),
+          notifyByEmail: Boolean(customer.notifyByEmail ?? true),
         },
         fulfillment: {
           delivery: customer.delivery || "Retiro en tienda",
           address: String(customer.address || "").trim(),
+          shippingCost: calculatedShipping,
         },
         payment: customer.payment || "Efectivo",
         notes: String(customer.notes || "").trim(),
         items: orderItems,
+        subtotal,
         total,
       });
 

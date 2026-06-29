@@ -30,9 +30,13 @@ const fallbackProducts = [
 
 const productImages = Object.fromEntries(fallbackProducts.map((product) => [product.id, product.image]));
 const categories = ["Todos", "Conjuntos", "Camisetas", "Selecciones", "Clubes"];
-const appVersion = "1.1.1";
+const appVersion = "1.2.0";
 const apiUrl = import.meta.env.VITE_API_URL || "/api";
 const formatter = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
+const availableSizes = ["4", "6", "8", "10", "12", "14", "S", "M", "L", "XL"];
+const freeShippingThreshold = 60000;
+const shippingCost = 4500;
+const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER || "5491123456789";
 const emptyCheckout = {
   name: "",
   phone: "",
@@ -41,6 +45,7 @@ const emptyCheckout = {
   address: "",
   payment: "Efectivo",
   notes: "",
+  notifyByEmail: true,
 };
 const emptyProductForm = {
   id: "",
@@ -128,14 +133,17 @@ export default function App() {
   }, []);
 
   const cartLines = useMemo(
-    () => cart.map((item) => ({ ...products.find((product) => product.id === item.id), quantity: item.quantity })).filter((item) => item.id),
+    () => cart.map((item) => ({ ...products.find((product) => product.id === item.id), quantity: item.quantity, size: item.size || "" })).filter((item) => item.id),
     [cart, products],
   );
 
   const carouselProducts = useMemo(() => products.slice(0, 8), [products]);
 
   const cartQuantity = cartLines.reduce((sum, item) => sum + item.quantity, 0);
-  const cartTotal = cartLines.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const cartSubtotal = cartLines.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const currentShippingCost = checkout.delivery === "Envio a domicilio" && cartSubtotal < freeShippingThreshold ? shippingCost : 0;
+  const cartTotal = cartSubtotal + currentShippingCost;
+  const missingSizes = cartLines.filter((item) => !item.size);
 
   const visibleProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -163,9 +171,14 @@ export default function App() {
       if (existing) {
         return currentCart.map((item) => (item.id === productId ? { ...item, quantity: item.quantity + 1 } : item));
       }
-      return [...currentCart, { id: productId, quantity: 1 }];
+      return [...currentCart, { id: productId, quantity: 1, size: "" }];
     });
     setCartOpen(true);
+  }
+
+  function updateCartSize(productId, size) {
+    setCheckoutStatus({ state: "idle", message: "" });
+    setCart((currentCart) => currentCart.map((item) => (item.id === productId ? { ...item, size } : item)));
   }
 
   function navigateTo(path) {
@@ -303,7 +316,7 @@ export default function App() {
   }
 
   async function removeProduct(productId) {
-    const shouldDelete = window.confirm("¿Eliminar este producto del catalogo?");
+    const shouldDelete = window.confirm("Eliminar este producto del catalogo?");
 
     if (!shouldDelete) {
       return;
@@ -334,6 +347,21 @@ export default function App() {
       return;
     }
 
+    if (missingSizes.length) {
+      setCheckoutStatus({ state: "error", message: "Elegí el talle de cada producto antes de finalizar." });
+      return;
+    }
+
+    if (checkout.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(checkout.email)) {
+      setCheckoutStatus({ state: "error", message: "Revisa el email para poder enviarte la confirmacion." });
+      return;
+    }
+
+    if (!/^[0-9\s()+-]{8,}$/.test(checkout.phone)) {
+      setCheckoutStatus({ state: "error", message: "Revisa el telefono o WhatsApp. Necesitamos al menos 8 numeros." });
+      return;
+    }
+
     setCheckoutStatus({ state: "loading", message: "Estamos preparando tu pedido..." });
 
     try {
@@ -342,7 +370,12 @@ export default function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customer: checkout,
-          items: cartLines.map((item) => ({ id: item.id, quantity: item.quantity })),
+          items: cartLines.map((item) => ({ id: item.id, quantity: item.quantity, size: item.size })),
+          totals: {
+            subtotal: cartSubtotal,
+            shipping: currentShippingCost,
+            total: cartTotal,
+          },
         }),
       });
 
@@ -365,6 +398,21 @@ export default function App() {
     } catch (error) {
       setCheckoutStatus({ state: "error", message: `${error.message} Revisa que la API este corriendo.` });
     }
+  }
+
+  function buildWhatsAppMessage() {
+    const lines = cartLines.map((item) => `- ${item.name} talle ${item.size || "sin talle"} x${item.quantity}: ${formatter.format(item.price * item.quantity)}`);
+    return encodeURIComponent([
+      "Hola AyRe, quiero finalizar mi compra:",
+      ...lines,
+      `Subtotal: ${formatter.format(cartSubtotal)}`,
+      `Envio: ${currentShippingCost ? formatter.format(currentShippingCost) : "Sin cargo"}`,
+      `Total: ${formatter.format(cartTotal)}`,
+      `Entrega: ${checkout.delivery}${checkout.address ? ` - ${checkout.address}` : ""}`,
+      `Pago: ${checkout.payment}`,
+      `Nombre: ${checkout.name}`,
+      `Telefono: ${checkout.phone}`,
+    ].join("\n"));
   }
 
   function closeLayers() {
@@ -606,7 +654,7 @@ export default function App() {
                   <img src={product.image} alt="" />
                   <div>
                     <strong>{product.name}</strong>
-                    <span>{product.category} · {formatter.format(product.price)} · Stock {product.stock ?? 0}</span>
+                    <span>{product.category} - {formatter.format(product.price)} - Stock {product.stock ?? 0}</span>
                   </div>
                   <div className="admin-actions">
                     <button type="button" aria-label={`Editar ${product.name}`} onClick={() => editProduct(product)}><Edit3 size={18} /></button>
@@ -683,6 +731,13 @@ export default function App() {
               <div>
                 <h3>{item.name}</h3>
                 <p>{formatter.format(item.price)} x {item.quantity}</p>
+                <label className="line-size">
+                  Talle
+                  <select value={item.size} onChange={(event) => updateCartSize(item.id, event.target.value)} required>
+                    <option value="">Elegir</option>
+                    {availableSizes.map((size) => <option value={size} key={`${item.id}-${size}`}>{size}</option>)}
+                  </select>
+                </label>
                 <div className="qty-controls" aria-label={`Cantidad de ${item.name}`}>
                   <button type="button" onClick={() => updateQuantity(item.id, -1)} aria-label="Restar"><Minus size={16} /></button>
                   <strong>{item.quantity}</strong>
@@ -694,7 +749,14 @@ export default function App() {
           )) : <p className="empty-state">Tu carrito esta vacio.</p>}
         </div>
         <div className="cart-footer">
-          <div className="cart-total"><span>Total</span><strong>{formatter.format(cartTotal)}</strong></div>
+          <div className="checkout-summary" aria-label="Resumen de compra">
+            <div><span>Subtotal</span><strong>{formatter.format(cartSubtotal)}</strong></div>
+            <div><span>Envio</span><strong>{currentShippingCost ? formatter.format(currentShippingCost) : "Sin cargo"}</strong></div>
+            <div className="cart-total"><span>Total</span><strong>{formatter.format(cartTotal)}</strong></div>
+            {checkout.delivery === "Envio a domicilio" && cartSubtotal < freeShippingThreshold && (
+              <p>Te faltan {formatter.format(freeShippingThreshold - cartSubtotal)} para envio gratis.</p>
+            )}
+          </div>
           <form className="checkout-form" onSubmit={submitOrder}>
             <div className="checkout-grid">
               <label>
@@ -735,13 +797,27 @@ export default function App() {
                 <option>Coordinar</option>
               </select>
             </label>
+            <p className="payment-help">
+              {checkout.payment === "Transferencia" && "Al confirmar, guardamos el pedido y te pasamos los datos de transferencia por WhatsApp."}
+              {checkout.payment === "Mercado Pago" && "Dejamos el pedido reservado y te enviamos el link de Mercado Pago para completar el pago."}
+              {checkout.payment === "Efectivo" && "Pagas al retirar o al coordinar la entrega."}
+              {checkout.payment === "Coordinar" && "Te contactamos para elegir el metodo de pago mas comodo."}
+            </p>
+
+            <label className="checkbox-label checkout-check">
+              <input checked={checkout.notifyByEmail} onChange={(event) => updateCheckout("notifyByEmail", event.target.checked)} type="checkbox" />
+              Enviarme confirmacion y novedades al email
+            </label>
 
             <label>
               Comentarios
-              <textarea value={checkout.notes} onChange={(event) => updateCheckout("notes", event.target.value)} placeholder="Talles, colores o cualquier detalle del pedido" rows="3" />
+              <textarea value={checkout.notes} onChange={(event) => updateCheckout("notes", event.target.value)} placeholder="Nombre en camiseta, colores o cualquier detalle del pedido" rows="3" />
             </label>
 
             {checkoutStatus.message && <p className={`checkout-message ${checkoutStatus.state}`}>{checkoutStatus.message}</p>}
+            <a className="whatsapp-checkout" href={`https://wa.me/${whatsappNumber}?text=${buildWhatsAppMessage()}`} target="_blank" rel="noreferrer">
+              Consultar por WhatsApp
+            </a>
             <button className="checkout-button" type="submit" disabled={checkoutStatus.state === "loading" || !cartLines.length}>
               {checkoutStatus.state === "loading" ? "Enviando pedido..." : "Finalizar compra"}
             </button>
