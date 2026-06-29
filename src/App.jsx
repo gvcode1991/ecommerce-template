@@ -285,6 +285,8 @@ export default function App() {
           <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="Buscar" />
         </label>
 
+        <img className="mobile-menu-logo" src={logoAyre} alt="AyRe" />
+
         <nav className="mobile-links">
           <a href="#productos" onClick={() => setMenuOpen(false)}>Camisetas mundialistas</a>
           <a href="#productos" onClick={() => setMenuOpen(false)}>Selecciones <Plus size={19} /></a>
