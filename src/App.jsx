@@ -30,6 +30,7 @@ const products = [
 
 const categories = ["Todos", "Conjuntos", "Camisetas", "Selecciones", "Clubes"];
 const carouselProducts = products.slice(0, 8);
+const appVersion = "1.1.1";
 const formatter = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
 
 function useSavedCart() {
@@ -97,8 +98,6 @@ export default function App() {
   return (
     <>
       <header className="site-header">
-        <div className="promo-bar">Envios gratis desde $60.000</div>
-
         <div className="header-main">
           <button className="icon-action menu-button" type="button" aria-label="Abrir menu" onClick={() => setMenuOpen(true)}>
             <Menu size={25} />
@@ -150,6 +149,10 @@ export default function App() {
               <a className="secondary-action" href="#coleccion">Conocer AyRe</a>
             </div>
           </div>
+        </section>
+
+        <section className="shipping-band" aria-label="Beneficio de envio">
+          <span>Envios gratis desde $60.000</span>
         </section>
 
         <section className="intro-band" id="coleccion" aria-label="Valores de AyRe">
@@ -237,6 +240,7 @@ export default function App() {
           <img src={logoAyre} alt="AyRe" />
         </a>
         <p>Copyright (c) 2026 AyRe. Todos los derechos reservados.</p>
+        <span className="version-mark">v{appVersion}</span>
       </footer>
 
       <aside className={`cart-panel ${isCartOpen ? "is-open" : ""}`} aria-label="Carrito" aria-hidden={!isCartOpen}>
