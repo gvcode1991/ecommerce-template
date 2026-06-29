@@ -425,6 +425,45 @@ h2 { margin-bottom: 0; font-size: clamp(1.9rem, 3.5vw, 3.15rem); font-weight: 62
 .admin-form .checkout-button {
   gap: 8px;
 }
+.image-upload-box {
+  display: grid;
+  gap: 12px;
+  border: 1px dashed rgba(155, 115, 80, 0.34);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fffaf4;
+}
+.image-upload-box strong {
+  display: block;
+  margin-bottom: 4px;
+}
+.image-upload-box span,
+.upload-message {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+.image-upload-box input[type="file"] {
+  min-height: auto;
+  padding: 10px;
+  background: var(--surface);
+}
+.image-upload-box img {
+  width: min(100%, 180px);
+  aspect-ratio: 1;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+}
+.upload-message {
+  margin: 0;
+}
+.upload-message.success {
+  color: #3b5a50;
+}
+.upload-message.error {
+  color: #8a332e;
+}
 .admin-products {
   display: grid;
   overflow: hidden;

@@ -1,11 +1,13 @@
 import cors from "cors";
 import express from "express";
 import mongoose from "mongoose";
+import multer from "multer";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { createOrder, listOrders } from "./services/ordersService.js";
 import { createProduct, deleteProduct, getProductById, listProducts, updateProduct } from "./services/productsService.js";
+import { uploadProductImage } from "./services/cloudinaryService.js";
 import { attachPurchaseToUser, getUserByEmail, registerUser, setFavorite } from "./services/usersService.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -13,6 +15,18 @@ const __dirname = path.dirname(__filename);
 const clientDistPath = path.resolve(__dirname, "../dist");
 const freeShippingThreshold = 60000;
 const shippingCost = 4500;
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_request, file, callback) => {
+    if (!file.mimetype.startsWith("image/")) {
+      callback(new Error("Solo se permiten imagenes."));
+      return;
+    }
+
+    callback(null, true);
+  },
+});
 
 export function createApp() {
   const app = express();
@@ -25,8 +39,18 @@ export function createApp() {
       ok: true,
       service: "ayre-api",
       mongoConfigured: Boolean(process.env.MONGODB_URI),
+      cloudinaryConfigured: Boolean(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET),
       mongoState: mongoose.connection.readyState,
     });
+  });
+
+  app.post("/api/uploads/products", upload.single("image"), async (request, response, next) => {
+    try {
+      const image = await uploadProductImage(request.file);
+      response.status(201).json({ image });
+    } catch (error) {
+      next(error);
+    }
   });
 
   app.get("/api/products", async (request, response, next) => {
@@ -222,17 +246,28 @@ export function createApp() {
   });
 
   app.use((error, _request, response, _next) => {
-    console.error(error);
+    if (error instanceof multer.MulterError) {
+      response.status(400).json({ message: error.code === "LIMIT_FILE_SIZE" ? "La imagen no puede superar 5 MB." : error.message });
+      return;
+    }
+
     if (error.code === 11000) {
       response.status(409).json({ message: "Ya existe un registro con ese codigo." });
       return;
     }
 
-    if (error.name === "ValidationError" || error.message.includes("obligatorios") || error.message.includes("Ya existe")) {
+    if (
+      error.name === "ValidationError" ||
+      error.message.includes("obligatorios") ||
+      error.message.includes("Ya existe") ||
+      error.message.includes("Cloudinary") ||
+      error.message.includes("imagen")
+    ) {
       response.status(400).json({ message: error.message });
       return;
     }
 
+    console.error(error);
     response.status(500).json({ message: "Error interno del servidor." });
   });
 

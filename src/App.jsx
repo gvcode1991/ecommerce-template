@@ -30,7 +30,7 @@ const fallbackProducts = [
 
 const productImages = Object.fromEntries(fallbackProducts.map((product) => [product.id, product.image]));
 const categories = ["Todos", "Conjuntos", "Camisetas", "Selecciones", "Clubes"];
-const appVersion = "1.2.0";
+const appVersion = "1.3.0";
 const apiUrl = import.meta.env.VITE_API_URL || "/api";
 const formatter = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
 const availableSizes = ["4", "6", "8", "10", "12", "14", "S", "M", "L", "XL"];
@@ -94,6 +94,7 @@ export default function App() {
   const [productForm, setProductForm] = useState(emptyProductForm);
   const [editingProductId, setEditingProductId] = useState("");
   const [adminStatus, setAdminStatus] = useState({ state: "idle", message: "" });
+  const [imageUpload, setImageUpload] = useState({ file: null, preview: "", status: "idle", message: "" });
   const [currentPath, setCurrentPath] = useState(() => window.location.pathname);
   const [userForm, setUserForm] = useState(emptyUserForm);
   const [userAccount, setUserAccount] = useState(null);
@@ -117,7 +118,7 @@ export default function App() {
       const apiProducts = data.products.map((product) => ({
         ...product,
         sourceImage: product.image,
-        image: productImages[product.id] || product.image,
+        image: product.image?.startsWith("http") ? product.image : productImages[product.id] || product.image,
       }));
 
       setProducts(apiProducts);
@@ -131,6 +132,12 @@ export default function App() {
   useEffect(() => {
     loadProducts();
   }, []);
+
+  useEffect(() => () => {
+    if (imageUpload.preview) {
+      URL.revokeObjectURL(imageUpload.preview);
+    }
+  }, [imageUpload.preview]);
 
   const cartLines = useMemo(
     () => cart.map((item) => ({ ...products.find((product) => product.id === item.id), quantity: item.quantity, size: item.size || "" })).filter((item) => item.id),
@@ -261,9 +268,51 @@ export default function App() {
     setProductForm((currentProduct) => ({ ...currentProduct, [field]: value }));
   }
 
+  function updateProductImageFile(file) {
+    if (imageUpload.preview) {
+      URL.revokeObjectURL(imageUpload.preview);
+    }
+
+    setImageUpload({
+      file,
+      preview: file ? URL.createObjectURL(file) : "",
+      status: "idle",
+      message: file ? "Imagen lista para subir." : "",
+    });
+  }
+
+  async function uploadProductImage() {
+    if (!imageUpload.file) {
+      setImageUpload((currentUpload) => ({ ...currentUpload, status: "error", message: "Elegi una imagen primero." }));
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("image", imageUpload.file);
+    setImageUpload((currentUpload) => ({ ...currentUpload, status: "loading", message: "Subiendo imagen a Cloudinary..." }));
+
+    try {
+      const response = await fetch(`${apiUrl}/uploads/products`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "No pudimos subir la imagen.");
+      }
+
+      updateProductForm("image", data.image.url);
+      setImageUpload((currentUpload) => ({ ...currentUpload, status: "success", message: "Imagen subida y URL cargada." }));
+    } catch (error) {
+      setImageUpload((currentUpload) => ({ ...currentUpload, status: "error", message: `${error.message} Revisa Cloudinary en Render.` }));
+    }
+  }
+
   function resetProductForm() {
     setProductForm(emptyProductForm);
     setEditingProductId("");
+    updateProductImageFile(null);
     setAdminStatus({ state: "idle", message: "" });
   }
 
@@ -348,7 +397,7 @@ export default function App() {
     }
 
     if (missingSizes.length) {
-      setCheckoutStatus({ state: "error", message: "Elegí el talle de cada producto antes de finalizar." });
+      setCheckoutStatus({ state: "error", message: "Elegi el talle de cada producto antes de finalizar." });
       return;
     }
 
@@ -635,6 +684,20 @@ export default function App() {
                 Imagen
                 <input value={productForm.image} onChange={(event) => updateProductForm("image", event.target.value)} type="text" placeholder="URL de imagen o /assets/archivo.jpg" />
               </label>
+              <div className="image-upload-box">
+                <div>
+                  <strong>Subir imagen</strong>
+                  <span>JPG, PNG o WebP hasta 5 MB. Se guarda en Cloudinary.</span>
+                </div>
+                <input type="file" accept="image/*" onChange={(event) => updateProductImageFile(event.target.files?.[0] || null)} />
+                {(imageUpload.preview || productForm.image) && (
+                  <img src={imageUpload.preview || productForm.image} alt="Vista previa del producto" />
+                )}
+                <button className="secondary-admin-button" type="button" onClick={uploadProductImage} disabled={imageUpload.status === "loading" || !imageUpload.file}>
+                  {imageUpload.status === "loading" ? "Subiendo..." : "Subir a Cloudinary"}
+                </button>
+                {imageUpload.message && <p className={`upload-message ${imageUpload.status}`}>{imageUpload.message}</p>}
+              </div>
               <label>
                 Descripcion
                 <textarea value={productForm.description} onChange={(event) => updateProductForm("description", event.target.value)} rows="3" placeholder="Descripcion corta para el catalogo" required />
