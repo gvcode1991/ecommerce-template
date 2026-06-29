@@ -1,9 +1,15 @@
 import cors from "cors";
 import express from "express";
 import mongoose from "mongoose";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { createOrder, listOrders } from "./services/ordersService.js";
 import { createProduct, deleteProduct, getProductById, listProducts, updateProduct } from "./services/productsService.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const clientDistPath = path.resolve(__dirname, "../dist");
 
 export function createApp() {
   const app = express();
@@ -156,8 +162,10 @@ export function createApp() {
     }
   });
 
+  app.use(express.static(clientDistPath));
+
   app.use((_request, response) => {
-    response.status(404).json({ message: "Ruta no encontrada." });
+    response.sendFile(path.join(clientDistPath, "index.html"));
   });
 
   app.use((error, _request, response, _next) => {
