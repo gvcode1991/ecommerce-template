@@ -50,6 +50,16 @@ export function createApp() {
       return;
     }
 
+    if (!customer?.name || !customer?.phone) {
+      response.status(400).json({ message: "Necesitamos nombre y telefono para crear el pedido." });
+      return;
+    }
+
+    if (customer.delivery === "Envio a domicilio" && !customer.address) {
+      response.status(400).json({ message: "Necesitamos la direccion para enviar el pedido." });
+      return;
+    }
+
     const orderItems = items.map((item) => {
       const product = products.find((candidate) => candidate.id === item.id);
       const quantity = Number(item.quantity || 0);
@@ -73,7 +83,21 @@ export function createApp() {
     }
 
     const total = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
-    const order = createOrder({ customer: customer || null, items: orderItems, total });
+    const order = createOrder({
+      customer: {
+        name: String(customer.name).trim(),
+        phone: String(customer.phone).trim(),
+        email: String(customer.email || "").trim(),
+      },
+      fulfillment: {
+        delivery: customer.delivery || "Retiro en tienda",
+        address: String(customer.address || "").trim(),
+      },
+      payment: customer.payment || "Efectivo",
+      notes: String(customer.notes || "").trim(),
+      items: orderItems,
+      total,
+    });
 
     response.status(201).json({ order });
   });

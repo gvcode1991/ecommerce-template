@@ -15,7 +15,7 @@ import argentinaBlack from "../assets/camiseta-argentina-negra.jpg";
 import argentinaStock from "../assets/camiseta-argentina-stock.jpg";
 import portugalSeven from "../assets/camiseta-portugal-7.jpg";
 
-const products = [
+const fallbackProducts = [
   { id: "set-boca-nino", name: "Set Boca nino", category: "Conjuntos", tags: ["Clubes", "Boca"], description: "Camiseta, short y medias para chicos.", price: 42900, image: bocaSet, badge: "Club" },
   { id: "conjunto-boca-azul", name: "Conjunto Boca azul", category: "Conjuntos", tags: ["Clubes", "Boca"], description: "Campera con capucha y pantalon deportivo.", price: 54900, image: bocaTrack, badge: "Nuevo" },
   { id: "set-river-nino", name: "Set River nino", category: "Conjuntos", tags: ["Clubes", "River"], description: "Kit completo con camiseta, short y medias.", price: 42900, image: riverSet, badge: "Club" },
@@ -28,10 +28,20 @@ const products = [
   { id: "camiseta-portugal-7", name: "Camiseta Portugal 7", category: "Camisetas", tags: ["Selecciones", "Portugal"], description: "Modelo rojo con detalles verdes.", price: 34900, image: portugalSeven, badge: "Seleccion" },
 ];
 
+const productImages = Object.fromEntries(fallbackProducts.map((product) => [product.id, product.image]));
 const categories = ["Todos", "Conjuntos", "Camisetas", "Selecciones", "Clubes"];
-const carouselProducts = products.slice(0, 8);
 const appVersion = "1.1.1";
+const apiUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:3001/api";
 const formatter = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
+const emptyCheckout = {
+  name: "",
+  phone: "",
+  email: "",
+  delivery: "Retiro en tienda",
+  address: "",
+  payment: "Efectivo",
+  notes: "",
+};
 
 function useSavedCart() {
   const [cart, setCart] = useState(() => {
@@ -55,11 +65,53 @@ export default function App() {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("Todos");
+  const [products, setProducts] = useState(fallbackProducts);
+  const [catalogStatus, setCatalogStatus] = useState({ state: "loading", message: "" });
+  const [checkout, setCheckout] = useState(emptyCheckout);
+  const [checkoutStatus, setCheckoutStatus] = useState({ state: "idle", message: "" });
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadProducts() {
+      try {
+        const response = await fetch(`${apiUrl}/products`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "No pudimos cargar el catalogo.");
+        }
+
+        const apiProducts = data.products.map((product) => ({
+          ...product,
+          image: productImages[product.id] || product.image,
+        }));
+
+        if (isMounted) {
+          setProducts(apiProducts);
+          setCatalogStatus({ state: "ready", message: "Catalogo conectado a la API." });
+        }
+      } catch {
+        if (isMounted) {
+          setProducts(fallbackProducts);
+          setCatalogStatus({ state: "fallback", message: "Mostrando catalogo local. Encende la API para sincronizar productos." });
+        }
+      }
+    }
+
+    loadProducts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const cartLines = useMemo(
     () => cart.map((item) => ({ ...products.find((product) => product.id === item.id), quantity: item.quantity })).filter((item) => item.id),
-    [cart],
+    [cart, products],
   );
+
+  const carouselProducts = useMemo(() => products.slice(0, 8), [products]);
 
   const cartQuantity = cartLines.reduce((sum, item) => sum + item.quantity, 0);
   const cartTotal = cartLines.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -74,6 +126,7 @@ export default function App() {
   }, [category, query]);
 
   function addToCart(productId) {
+    setCheckoutStatus({ state: "idle", message: "" });
     setCart((currentCart) => {
       const existing = currentCart.find((item) => item.id === productId);
       if (existing) {
@@ -85,9 +138,49 @@ export default function App() {
   }
 
   function updateQuantity(productId, change) {
+    setCheckoutStatus({ state: "idle", message: "" });
     setCart((currentCart) =>
       currentCart.map((item) => (item.id === productId ? { ...item, quantity: item.quantity + change } : item)).filter((item) => item.quantity > 0),
     );
+  }
+
+  function updateCheckout(field, value) {
+    setCheckoutStatus({ state: "idle", message: "" });
+    setCheckout((currentCheckout) => ({ ...currentCheckout, [field]: value }));
+  }
+
+  async function submitOrder(event) {
+    event.preventDefault();
+
+    if (!cartLines.length) {
+      setCheckoutStatus({ state: "error", message: "Agrega al menos un producto para finalizar la compra." });
+      return;
+    }
+
+    setCheckoutStatus({ state: "loading", message: "Estamos preparando tu pedido..." });
+
+    try {
+      const response = await fetch(`${apiUrl}/orders`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer: checkout,
+          items: cartLines.map((item) => ({ id: item.id, quantity: item.quantity })),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "No pudimos crear el pedido.");
+      }
+
+      setCart([]);
+      setCheckout(emptyCheckout);
+      setCheckoutStatus({ state: "success", message: `Pedido recibido: ${data.order.id}. Te contactamos para coordinar.` });
+    } catch (error) {
+      setCheckoutStatus({ state: "error", message: `${error.message} Revisa que la API este corriendo.` });
+    }
   }
 
   function closeLayers() {
@@ -189,6 +282,7 @@ export default function App() {
             <div>
               <p className="eyebrow">Catalogo</p>
               <h2>Productos destacados</h2>
+              {catalogStatus.state === "fallback" && <p className="catalog-note">{catalogStatus.message}</p>}
             </div>
             <div className="shop-tools" role="search">
               <label className="search-box">
@@ -267,7 +361,57 @@ export default function App() {
         </div>
         <div className="cart-footer">
           <div className="cart-total"><span>Total</span><strong>{formatter.format(cartTotal)}</strong></div>
-          <button className="checkout-button" type="button">Finalizar compra</button>
+          <form className="checkout-form" onSubmit={submitOrder}>
+            <div className="checkout-grid">
+              <label>
+                Nombre
+                <input value={checkout.name} onChange={(event) => updateCheckout("name", event.target.value)} type="text" placeholder="Nombre y apellido" required />
+              </label>
+              <label>
+                Telefono
+                <input value={checkout.phone} onChange={(event) => updateCheckout("phone", event.target.value)} type="tel" placeholder="WhatsApp" required />
+              </label>
+              <label>
+                Email
+                <input value={checkout.email} onChange={(event) => updateCheckout("email", event.target.value)} type="email" placeholder="tu@email.com" />
+              </label>
+              <label>
+                Entrega
+                <select value={checkout.delivery} onChange={(event) => updateCheckout("delivery", event.target.value)}>
+                  <option>Retiro en tienda</option>
+                  <option>Envio a domicilio</option>
+                  <option>Coordinar por WhatsApp</option>
+                </select>
+              </label>
+            </div>
+
+            {checkout.delivery === "Envio a domicilio" && (
+              <label>
+                Direccion
+                <input value={checkout.address} onChange={(event) => updateCheckout("address", event.target.value)} type="text" placeholder="Calle, numero, localidad" required />
+              </label>
+            )}
+
+            <label>
+              Pago
+              <select value={checkout.payment} onChange={(event) => updateCheckout("payment", event.target.value)}>
+                <option>Efectivo</option>
+                <option>Transferencia</option>
+                <option>Mercado Pago</option>
+                <option>Coordinar</option>
+              </select>
+            </label>
+
+            <label>
+              Comentarios
+              <textarea value={checkout.notes} onChange={(event) => updateCheckout("notes", event.target.value)} placeholder="Talles, colores o cualquier detalle del pedido" rows="3" />
+            </label>
+
+            {checkoutStatus.message && <p className={`checkout-message ${checkoutStatus.state}`}>{checkoutStatus.message}</p>}
+            <button className="checkout-button" type="submit" disabled={checkoutStatus.state === "loading" || !cartLines.length}>
+              {checkoutStatus.state === "loading" ? "Enviando pedido..." : "Finalizar compra"}
+            </button>
+          </form>
         </div>
       </aside>
 
