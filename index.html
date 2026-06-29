@@ -9,26 +9,33 @@
   <body>
     <header class="site-header">
       <a class="brand" href="#inicio" aria-label="Ayre inicio">
-        <span class="brand-mark">A</span>
-        <span>Ayre</span>
+        <img src="assets/logo-ayre.jpg" alt="AyRe" />
       </a>
-      <nav class="main-nav" aria-label="Secciones">
-        <a href="#productos">Productos</a>
-        <a href="#coleccion">Coleccion</a>
-        <a href="#contacto">Contacto</a>
-      </nav>
-      <button class="icon-button cart-toggle" type="button" aria-label="Abrir carrito">
-        <span aria-hidden="true">Bag</span>
-        <strong id="cartCount">0</strong>
-      </button>
+      <div class="header-actions">
+        <nav class="main-nav" aria-label="Secciones">
+          <a href="#inicio">Inicio</a>
+          <a href="#productos">Productos</a>
+          <a href="#coleccion">Nosotros</a>
+          <a href="#contacto">Contacto</a>
+        </nav>
+        <button class="icon-button cart-toggle" type="button" aria-label="Abrir carrito">
+          <span aria-hidden="true">Bolsa</span>
+          <strong id="cartCount">0</strong>
+        </button>
+        <button class="menu-toggle" type="button" aria-label="Abrir menu" aria-expanded="false">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
     </header>
 
     <main id="inicio">
       <section class="hero">
         <div class="hero-copy">
-          <p class="eyebrow">Nueva seleccion</p>
+          <p class="eyebrow">Indumentaria deportiva</p>
           <h1>Ayre</h1>
-          <p class="hero-text">Prendas, accesorios y objetos elegidos para una vida simple, linda y usable.</p>
+          <p class="hero-text">Camisetas, conjuntos y equipos para chicos con stock listo para elegir.</p>
           <div class="hero-actions">
             <a class="primary-action" href="#productos">Ver tienda</a>
             <a class="secondary-action" href="#coleccion">Explorar estilo</a>
@@ -39,8 +46,8 @@
       <section class="intro-band" id="coleccion" aria-label="Valores de Ayre">
         <div>
           <span>01</span>
-          <strong>Curado diario</strong>
-          <p>Piezas con textura, calce y uso real.</p>
+          <strong>Modelos actuales</strong>
+          <p>Equipos de clubes y selecciones para uso diario.</p>
         </div>
         <div>
           <span>02</span>
@@ -63,13 +70,14 @@
           <div class="shop-tools" role="search">
             <label class="search-box">
               <span>Buscar</span>
-              <input id="searchInput" type="search" placeholder="Camisa, bolso, ceramica..." />
+              <input id="searchInput" type="search" placeholder="Boca, River, Argentina..." />
             </label>
             <select id="categoryFilter" aria-label="Filtrar categoria">
               <option value="Todos">Todos</option>
-              <option value="Indumentaria">Indumentaria</option>
-              <option value="Accesorios">Accesorios</option>
-              <option value="Casa">Casa</option>
+              <option value="Conjuntos">Conjuntos</option>
+              <option value="Camisetas">Camisetas</option>
+              <option value="Selecciones">Selecciones</option>
+              <option value="Clubes">Clubes</option>
             </select>
           </div>
         </div>
@@ -103,6 +111,18 @@
           <strong id="cartTotal">$0</strong>
         </div>
         <button class="checkout-button" type="button">Finalizar compra</button>
+      </div>
+    </aside>
+    <aside class="mobile-menu" aria-label="Menu mobile" aria-hidden="true">
+      <button class="close-menu" type="button" aria-label="Cerrar menu">×</button>
+      <div class="mobile-menu-inner">
+        <nav class="mobile-links">
+          <a href="#inicio">Inicio</a>
+          <a href="#productos">Productos</a>
+          <a href="#coleccion">Nosotros</a>
+          <a href="#contacto">Contacto</a>
+        </nav>
+        <img src="assets/logo-ayre.jpg" alt="AyRe" />
       </div>
     </aside>
     <div class="overlay" hidden></div>

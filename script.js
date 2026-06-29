@@ -1,67 +1,93 @@
 const products = [
   {
-    id: "camisa-lino",
-    name: "Camisa de lino Alba",
-    category: "Indumentaria",
-    description: "Lino liviano con caida relajada.",
+    id: "set-boca-nino",
+    name: "Set Boca nino",
+    category: "Conjuntos",
+    tags: ["Clubes", "Boca"],
+    description: "Camiseta, short y medias.",
     price: 42900,
-    colors: ["#d8dbd2", "#315c4e"],
+    image: "assets/set-boca-nino.jpg",
   },
   {
-    id: "bolso-rio",
-    name: "Bolso Rio",
-    category: "Accesorios",
-    description: "Tote amplio de lona y cuero vegetal.",
-    price: 38500,
-    colors: ["#b85c38", "#f1d8bd"],
+    id: "conjunto-boca-azul",
+    name: "Conjunto Boca azul",
+    category: "Conjuntos",
+    tags: ["Clubes", "Boca"],
+    description: "Campera con capucha y pantalon.",
+    price: 54900,
+    image: "assets/conjunto-boca-azul.jpg",
   },
   {
-    id: "vaso-ceramica",
-    name: "Set ceramica Nube",
-    category: "Casa",
-    description: "Dos piezas esmaltadas a mano.",
-    price: 24800,
-    colors: ["#dce8ec", "#ffffff"],
+    id: "set-river-nino",
+    name: "Set River nino",
+    category: "Conjuntos",
+    tags: ["Clubes", "River"],
+    description: "Camiseta, short y medias.",
+    price: 42900,
+    image: "assets/set-river-nino.jpg",
   },
   {
-    id: "pantalon-savia",
-    name: "Pantalon Savia",
-    category: "Indumentaria",
-    description: "Sastrero suave para uso diario.",
-    price: 52400,
-    colors: ["#315c4e", "#9da891"],
+    id: "conjunto-boca-blanco",
+    name: "Conjunto Boca blanco",
+    category: "Conjuntos",
+    tags: ["Clubes", "Boca"],
+    description: "Campera clara y pantalon deportivo.",
+    price: 54900,
+    image: "assets/conjunto-boca-blanco.jpg",
   },
   {
-    id: "lentes-sol",
-    name: "Lentes Clara",
-    category: "Accesorios",
-    description: "Marco liviano con filtro UV.",
-    price: 31600,
-    colors: ["#171717", "#d7b996"],
+    id: "set-racing-nino",
+    name: "Set Racing nino",
+    category: "Conjuntos",
+    tags: ["Clubes", "Racing"],
+    description: "Camiseta, short y medias.",
+    price: 42900,
+    image: "assets/set-racing-nino.jpg",
   },
   {
-    id: "manta-casa",
-    name: "Manta Brisa",
-    category: "Casa",
-    description: "Algodon tejido con textura suave.",
-    price: 46200,
-    colors: ["#f2dfce", "#7c8f99"],
+    id: "set-al-nassr-nino",
+    name: "Set Al Nassr nino",
+    category: "Conjuntos",
+    tags: ["Clubes", "Al Nassr"],
+    description: "Camiseta, short y medias.",
+    price: 42900,
+    image: "assets/set-al-nassr-nino.jpg",
   },
   {
-    id: "top-aire",
-    name: "Top Aire",
-    category: "Indumentaria",
-    description: "Basico fresco de punto fino.",
-    price: 28900,
-    colors: ["#ffffff", "#b85c38"],
+    id: "camiseta-argentina-10",
+    name: "Camiseta Argentina 10",
+    category: "Camisetas",
+    tags: ["Selecciones", "Argentina"],
+    description: "Modelo titular celeste y blanco.",
+    price: 34900,
+    image: "assets/camiseta-argentina-10.jpg",
   },
   {
-    id: "bandeja-raiz",
-    name: "Bandeja Raiz",
-    category: "Casa",
-    description: "Madera clara para mesa o escritorio.",
-    price: 33400,
-    colors: ["#c69a6b", "#315c4e"],
+    id: "camiseta-argentina-negra",
+    name: "Camiseta Argentina negra",
+    category: "Camisetas",
+    tags: ["Selecciones", "Argentina"],
+    description: "Modelo alternativo con detalles azules.",
+    price: 34900,
+    image: "assets/camiseta-argentina-negra.jpg",
+  },
+  {
+    id: "camiseta-argentina-stock",
+    name: "Camiseta Argentina stock",
+    category: "Camisetas",
+    tags: ["Selecciones", "Argentina"],
+    description: "Pack disponible con etiqueta.",
+    price: 34900,
+    image: "assets/camiseta-argentina-stock.jpg",
+  },
+  {
+    id: "camiseta-portugal-7",
+    name: "Camiseta Portugal 7",
+    category: "Camisetas",
+    tags: ["Selecciones", "Portugal"],
+    description: "Modelo rojo con detalles verdes.",
+    price: 34900,
+    image: "assets/camiseta-portugal-7.jpg",
   },
 ];
 
@@ -75,6 +101,9 @@ const productGrid = document.querySelector("#productGrid");
 const searchInput = document.querySelector("#searchInput");
 const categoryFilter = document.querySelector("#categoryFilter");
 const cartPanel = document.querySelector(".cart-panel");
+const mobileMenu = document.querySelector(".mobile-menu");
+const menuToggle = document.querySelector(".menu-toggle");
+const closeMenuButton = document.querySelector(".close-menu");
 const overlay = document.querySelector(".overlay");
 const cartItems = document.querySelector("#cartItems");
 const cartCount = document.querySelector("#cartCount");
@@ -90,8 +119,9 @@ function renderProducts() {
   const query = searchInput.value.trim().toLowerCase();
   const category = categoryFilter.value;
   const visibleProducts = products.filter((product) => {
-    const matchesCategory = category === "Todos" || product.category === category;
-    const matchesQuery = [product.name, product.category, product.description]
+    const matchesCategory =
+      category === "Todos" || product.category === category || product.tags.includes(category);
+    const matchesQuery = [product.name, product.category, product.description, ...product.tags]
       .join(" ")
       .toLowerCase()
       .includes(query);
@@ -107,7 +137,7 @@ function renderProducts() {
     .map(
       (product) => `
         <article class="product-card">
-          <div class="product-visual" style="--visual-main:${product.colors[0]};--visual-accent:${product.colors[1]}"></div>
+          <img class="product-visual" src="${product.image}" alt="${product.name}" loading="lazy">
           <div class="product-info">
             <div class="product-meta">
               <div>
@@ -191,7 +221,27 @@ function closeCart() {
   document.body.classList.remove("cart-open");
   cartPanel.classList.remove("is-open");
   cartPanel.setAttribute("aria-hidden", "true");
-  overlay.hidden = true;
+  if (!mobileMenu.classList.contains("is-open")) {
+    overlay.hidden = true;
+  }
+}
+
+function openMenu() {
+  document.body.classList.add("menu-open");
+  mobileMenu.classList.add("is-open");
+  mobileMenu.setAttribute("aria-hidden", "false");
+  menuToggle.setAttribute("aria-expanded", "true");
+  overlay.hidden = false;
+}
+
+function closeMenu() {
+  document.body.classList.remove("menu-open");
+  mobileMenu.classList.remove("is-open");
+  mobileMenu.setAttribute("aria-hidden", "true");
+  menuToggle.setAttribute("aria-expanded", "false");
+  if (!cartPanel.classList.contains("is-open")) {
+    overlay.hidden = true;
+  }
 }
 
 productGrid.addEventListener("click", (event) => {
@@ -208,7 +258,13 @@ cartItems.addEventListener("click", (event) => {
 
 document.querySelector(".cart-toggle").addEventListener("click", openCart);
 document.querySelector(".close-cart").addEventListener("click", closeCart);
-overlay.addEventListener("click", closeCart);
+menuToggle.addEventListener("click", openMenu);
+closeMenuButton.addEventListener("click", closeMenu);
+document.querySelectorAll(".mobile-links a").forEach((link) => link.addEventListener("click", closeMenu));
+overlay.addEventListener("click", () => {
+  closeCart();
+  closeMenu();
+});
 searchInput.addEventListener("input", renderProducts);
 categoryFilter.addEventListener("change", renderProducts);
 

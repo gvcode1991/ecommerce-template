@@ -5,9 +5,10 @@
   --paper: #fbfaf7;
   --surface: #ffffff;
   --line: #ded8ce;
-  --accent: #315c4e;
-  --accent-2: #b85c38;
-  --sky: #dce8ec;
+  --accent: #8b694d;
+  --accent-2: #a21d35;
+  --deep: #173337;
+  --gold: #c59d55;
   --shadow: 0 20px 60px rgba(23, 23, 23, 0.12);
 }
 
@@ -56,24 +57,27 @@ a {
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-size: 1.1rem;
-  font-weight: 800;
+  width: 118px;
+  height: 58px;
 }
 
-.brand-mark {
-  display: grid;
-  width: 36px;
-  height: 36px;
-  place-items: center;
-  background: var(--ink);
-  color: var(--paper);
-  border-radius: 50%;
-  font-family: Georgia, serif;
+.brand img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.header-actions,
+.main-nav {
+  display: flex;
+  align-items: center;
+}
+
+.header-actions {
+  gap: 12px;
 }
 
 .main-nav {
-  display: flex;
   gap: clamp(16px, 3vw, 34px);
   color: var(--muted);
   font-size: 0.95rem;
@@ -108,14 +112,38 @@ a {
   font-size: 0.78rem;
 }
 
+.menu-toggle,
+.close-menu {
+  display: none;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.menu-toggle {
+  width: 46px;
+  height: 46px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+
+.menu-toggle span {
+  display: block;
+  width: 28px;
+  height: 3px;
+  background: currentColor;
+}
+
 .hero {
   min-height: min(720px, calc(100svh - 70px));
   display: flex;
   align-items: center;
   padding: clamp(52px, 8vw, 100px) clamp(18px, 5vw, 72px);
   background:
-    linear-gradient(90deg, rgba(251, 250, 247, 0.95) 0%, rgba(251, 250, 247, 0.72) 38%, rgba(251, 250, 247, 0.12) 68%),
-    url("assets/ayre-hero.svg") center right / cover no-repeat;
+    linear-gradient(90deg, rgba(251, 250, 247, 0.95) 0%, rgba(251, 250, 247, 0.68) 42%, rgba(251, 250, 247, 0.08) 70%),
+    url("assets/conjunto-boca-azul.jpg") center right / cover no-repeat;
   border-bottom: 1px solid var(--line);
 }
 
@@ -289,32 +317,11 @@ h2 {
 }
 
 .product-visual {
-  position: relative;
-  min-height: 240px;
-  background: var(--sky);
-  overflow: hidden;
-}
-
-.product-visual::before,
-.product-visual::after {
-  content: "";
-  position: absolute;
-  border-radius: 999px;
-}
-
-.product-visual::before {
-  inset: 18% 14% 22% 22%;
-  background: var(--visual-main);
-  box-shadow: inset -18px -20px 0 rgba(255, 255, 255, 0.25);
-}
-
-.product-visual::after {
-  width: 42%;
+  display: block;
+  width: 100%;
   aspect-ratio: 1;
-  right: 12%;
-  bottom: 12%;
-  background: var(--visual-accent);
-  box-shadow: 0 16px 32px rgba(23, 23, 23, 0.15);
+  object-fit: cover;
+  background: #ece5dc;
 }
 
 .product-info {
@@ -487,6 +494,62 @@ body.cart-open {
   overflow: hidden;
 }
 
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: var(--deep);
+  color: white;
+  transform: translateX(105%);
+  transition: transform 220ms ease;
+}
+
+.mobile-menu.is-open {
+  transform: translateX(0);
+}
+
+.close-menu {
+  position: absolute;
+  top: 28px;
+  right: 28px;
+  display: block;
+  color: white;
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.mobile-menu-inner {
+  display: grid;
+  grid-template-columns: 0.7fr 1.3fr;
+  align-items: center;
+  width: min(760px, 100%);
+  gap: 18px;
+}
+
+.mobile-links {
+  display: grid;
+  gap: 24px;
+  font-size: clamp(1.35rem, 6vw, 2.4rem);
+  letter-spacing: 0;
+}
+
+.mobile-links a {
+  color: white;
+}
+
+.mobile-menu img {
+  width: min(360px, 54vw);
+  justify-self: center;
+  border-radius: 8px;
+}
+
+body.menu-open {
+  overflow: hidden;
+}
+
 @media (max-width: 980px) {
   .product-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -515,12 +578,51 @@ body.cart-open {
     display: none;
   }
 
+  .site-header {
+    background: var(--deep);
+    border-bottom: 0;
+    padding: 16px 20px;
+  }
+
+  .brand {
+    width: 106px;
+    height: 66px;
+    padding: 4px;
+    background: var(--paper);
+    border-radius: 8px;
+  }
+
+  .cart-toggle span {
+    display: none;
+  }
+
+  .cart-toggle {
+    min-width: 42px;
+    width: 42px;
+    height: 42px;
+  }
+
+  .menu-toggle {
+    display: inline-flex;
+    color: white;
+  }
+
   .hero {
-    min-height: 640px;
+    min-height: calc(100svh - 98px);
     align-items: end;
     background:
-      linear-gradient(0deg, rgba(251, 250, 247, 0.96) 0%, rgba(251, 250, 247, 0.75) 46%, rgba(251, 250, 247, 0.08) 100%),
-      url("assets/ayre-hero.svg") center top / cover no-repeat;
+      linear-gradient(0deg, rgba(23, 51, 55, 0.78) 0%, rgba(23, 51, 55, 0.18) 42%, rgba(23, 51, 55, 0.04) 100%),
+      url("assets/camiseta-argentina-10.jpg") center / cover no-repeat;
+    color: white;
+    padding-bottom: 34px;
+  }
+
+  .hero-text {
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  .secondary-action {
+    color: var(--ink);
   }
 
   .intro-band,
@@ -537,5 +639,29 @@ body.cart-open {
   .shop-tools select,
   .newsletter-form button {
     width: 100%;
+  }
+
+  .mobile-menu-inner {
+    grid-template-columns: 0.78fr 1.22fr;
+  }
+}
+
+@media (max-width: 440px) {
+  .mobile-menu {
+    align-items: center;
+    padding: 20px;
+  }
+
+  .mobile-menu-inner {
+    grid-template-columns: 1fr 1.4fr;
+  }
+
+  .mobile-links {
+    gap: 22px;
+    font-size: 1.25rem;
+  }
+
+  .mobile-menu img {
+    width: min(235px, 58vw);
   }
 }
