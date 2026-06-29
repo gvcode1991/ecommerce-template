@@ -268,15 +268,31 @@ export default function App() {
       </aside>
 
       <aside className={`mobile-menu ${isMenuOpen ? "is-open" : ""}`} aria-label="Menu mobile" aria-hidden={!isMenuOpen}>
-        <button className="close-menu" type="button" aria-label="Cerrar menu" onClick={() => setMenuOpen(false)}><X size={34} /></button>
-        <div className="mobile-menu-inner">
-          <nav className="mobile-links">
-            <a href="#inicio" onClick={() => setMenuOpen(false)}>Inicio</a>
-            <a href="#productos" onClick={() => setMenuOpen(false)}>Productos</a>
-            <a href="#coleccion" onClick={() => setMenuOpen(false)}>Nosotros</a>
-            <a href="#contacto" onClick={() => setMenuOpen(false)}>Contacto</a>
-          </nav>
-          <img src={logoAyre} alt="AyRe" />
+        <div className="mobile-menu-top">
+          <button className="menu-plain-button" type="button" aria-label="Cerrar menu" onClick={() => setMenuOpen(false)}><X size={24} /></button>
+          <button className="menu-bag" type="button" aria-label="Abrir carrito" onClick={() => { setMenuOpen(false); setCartOpen(true); }}>
+            <ShoppingBag size={23} />
+            <strong>{cartQuantity}</strong>
+          </button>
+        </div>
+
+        <label className="mobile-search">
+          <Search size={20} />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="Buscar" />
+        </label>
+
+        <nav className="mobile-links">
+          <a href="#productos" onClick={() => setMenuOpen(false)}>Camisetas mundialistas</a>
+          <a href="#productos" onClick={() => setMenuOpen(false)}>Selecciones <Plus size={19} /></a>
+          <a href="#productos" onClick={() => setMenuOpen(false)}>Clubes <Plus size={19} /></a>
+          <a href="#productos" onClick={() => setMenuOpen(false)}>Conjuntos deportivos <Plus size={19} /></a>
+          <a href="#coleccion" onClick={() => setMenuOpen(false)}>AyRe</a>
+          <a href="#contacto" onClick={() => setMenuOpen(false)}>Contacto</a>
+        </nav>
+
+        <div className="mobile-account">
+          <UserRound size={21} />
+          <a href="#contacto" onClick={() => setMenuOpen(false)}>Cuenta</a>
         </div>
       </aside>
 
