@@ -1,4 +1,4 @@
-import { Menu, Minus, Plus, Search, ShoppingBag, X } from "lucide-react";
+import { Heart, Home, Menu, Minus, Plus, Search, ShoppingBag, UserRound, X } from "lucide-react";
 import React from "react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -97,25 +97,46 @@ export default function App() {
   return (
     <>
       <header className="site-header">
-        <button className="icon-action menu-button" type="button" aria-label="Abrir menu" onClick={() => setMenuOpen(true)}>
-          <Menu size={26} />
-        </button>
+        <div className="promo-bar">Envios gratis desde $60.000</div>
 
-        <a className="brand" href="#inicio" aria-label="AyRe inicio">
-          <img src={logoAyre} alt="AyRe" />
-        </a>
+        <div className="header-main">
+          <button className="icon-action menu-button" type="button" aria-label="Abrir menu" onClick={() => setMenuOpen(true)}>
+            <Menu size={25} />
+          </button>
+
+          <a className="brand" href="#inicio" aria-label="AyRe inicio">
+            <img src={logoAyre} alt="AyRe" />
+          </a>
+
+          <label className="header-search">
+            <Search size={24} />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="Buscar camisetas, conjuntos, clubes..." />
+          </label>
+
+          <div className="header-actions" aria-label="Accesos rapidos">
+            <a href="#productos" aria-label="Favoritos"><Heart size={24} /><span>Favoritos</span></a>
+            <a href="#contacto" aria-label="Mi cuenta"><UserRound size={23} /><span>Mi cuenta</span></a>
+            <a href="#contacto" aria-label="Tiendas"><Home size={23} /><span>Tiendas</span></a>
+            <button className="header-cart" type="button" aria-label="Abrir carrito" onClick={() => setCartOpen(true)}>
+              <ShoppingBag size={24} />
+              <span>Cesta</span>
+              <strong>{cartQuantity}</strong>
+            </button>
+          </div>
+
+          <button className="icon-action cart-button" type="button" aria-label="Abrir carrito" onClick={() => setCartOpen(true)}>
+            <ShoppingBag size={22} />
+            <strong>{cartQuantity}</strong>
+          </button>
+        </div>
 
         <nav className="main-nav" aria-label="Secciones">
-          <a href="#inicio">Inicio</a>
-          <a href="#productos">Productos</a>
-          <a href="#coleccion">Nosotros</a>
+          <a href="#productos">Coleccion</a>
+          <a href="#productos">Camisetas</a>
+          <a href="#productos">Conjuntos</a>
+          <a href="#coleccion">AyRe</a>
           <a href="#contacto">Contacto</a>
         </nav>
-
-        <button className="icon-action cart-button" type="button" aria-label="Abrir carrito" onClick={() => setCartOpen(true)}>
-          <ShoppingBag size={23} />
-          <strong>{cartQuantity}</strong>
-        </button>
       </header>
 
       <main id="inicio">
@@ -215,7 +236,7 @@ export default function App() {
         <a className="footer-brand" href="#inicio" aria-label="AyRe inicio">
           <img src={logoAyre} alt="AyRe" />
         </a>
-        <p>Copyright © 2026 AyRe. Todos los derechos reservados.</p>
+        <p>Copyright (c) 2026 AyRe. Todos los derechos reservados.</p>
       </footer>
 
       <aside className={`cart-panel ${isCartOpen ? "is-open" : ""}`} aria-label="Carrito" aria-hidden={!isCartOpen}>
