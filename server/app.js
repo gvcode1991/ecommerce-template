@@ -144,7 +144,7 @@ export function createApp() {
         email = {
           sent: false,
           reason: "send-failed",
-          message: "Cuenta creada, pero no pudimos enviar el email de activacion. Revisa SMTP en Render.",
+          message: "Cuenta creada, pero no pudimos enviar el email de activacion. Revisa Resend en Render.",
         };
       }
 

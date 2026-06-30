@@ -275,7 +275,7 @@ export default function App() {
         state: emailSent ? "success" : "error",
         message: emailSent
           ? "Te enviamos un email para activar tu cuenta antes de comprar."
-          : data.email?.message || "Cuenta creada, pero no pudimos enviar el email de activacion. Revisa SMTP en Render.",
+          : data.email?.message || "Cuenta creada, pero no pudimos enviar el email de activacion. Revisa Resend en Render.",
       });
     } catch (error) {
       setUserStatus({ state: "error", message: `${error.message} Revisa que la API este corriendo.` });
