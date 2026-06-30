@@ -18,20 +18,34 @@ export async function registerUser(userData) {
   const database = await connectToDatabase();
 
   if (!database.connected) {
-    const currentUser = memoryUsers.get(user.email) || { favorites: [], purchases: [], emailVerified: false };
-    const savedUser = { ...currentUser, ...user, passwordHash: passwordData.hash, passwordSalt: passwordData.salt, confirmationToken, confirmationSentAt: new Date().toISOString() };
+    const currentUser = memoryUsers.get(user.email);
+
+    if (currentUser) {
+      return { ...sanitizeUser(currentUser), alreadyExists: true };
+    }
+
+    const savedUser = { favorites: [], purchases: [], emailVerified: false, role: "user", ...user, passwordHash: passwordData.hash, passwordSalt: passwordData.salt, confirmationToken, confirmationSentAt: new Date().toISOString() };
     memoryUsers.set(user.email, savedUser);
     return savedUser;
   }
 
-  const savedUser = await User.findOneAndUpdate(
-    { email: user.email },
-    {
-      $set: { ...user, passwordHash: passwordData.hash, passwordSalt: passwordData.salt, confirmationToken, confirmationSentAt: new Date() },
-      $setOnInsert: { favorites: [], purchases: [], emailVerified: false },
-    },
-    { upsert: true, returnDocument: "after", runValidators: true },
-  );
+  const existingUser = await User.findOne({ email: user.email }).populate("purchases");
+
+  if (existingUser) {
+    return { ...existingUser.toJSON(), alreadyExists: true };
+  }
+
+  const savedUser = await User.create({
+    ...user,
+    passwordHash: passwordData.hash,
+    passwordSalt: passwordData.salt,
+    confirmationToken,
+    confirmationSentAt: new Date(),
+    favorites: [],
+    purchases: [],
+    emailVerified: false,
+    role: "user",
+  });
 
   return { ...savedUser.toJSON(), confirmationToken };
 }
@@ -52,6 +66,44 @@ export async function authenticateUser(email, password) {
   }
 
   return user.toJSON();
+}
+
+export async function listUsers() {
+  const database = await connectToDatabase();
+
+  if (!database.connected) {
+    return [...memoryUsers.values()].map((user) => sanitizeUser(user));
+  }
+
+  const users = await User.find().sort({ createdAt: -1 });
+  return users.map((user) => user.toJSON());
+}
+
+export async function updateUserRole(email, role) {
+  const normalizedEmail = normalizeEmail(email);
+  const normalizedRole = String(role || "").trim().toLowerCase();
+
+  if (!["user", "admin"].includes(normalizedRole)) {
+    throw new Error("Role invalido.");
+  }
+
+  const database = await connectToDatabase();
+
+  if (!database.connected) {
+    const user = memoryUsers.get(normalizedEmail);
+    if (!user) return null;
+    user.role = normalizedRole;
+    memoryUsers.set(normalizedEmail, user);
+    return sanitizeUser(user);
+  }
+
+  const user = await User.findOneAndUpdate(
+    { email: normalizedEmail },
+    { $set: { role: normalizedRole } },
+    { returnDocument: "after", runValidators: true },
+  ).populate("purchases");
+
+  return user ? user.toJSON() : null;
 }
 
 export async function confirmUserEmail(token) {

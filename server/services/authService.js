@@ -36,7 +36,7 @@ export function createSessionToken(user) {
   const payload = {
     sub: user.email,
     name: user.name,
-    role: "user",
+    role: user.role || "user",
     iat: Date.now(),
     exp: Date.now() + tokenTtlMs,
   };

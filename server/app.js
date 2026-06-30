@@ -10,7 +10,7 @@ import { createProduct, deleteProduct, getAvailableStock, getProductById, listPr
 import { uploadProductImage } from "./services/cloudinaryService.js";
 import { sendAccountConfirmationEmail, isEmailConfigured, verifyEmailConnection } from "./services/emailService.js";
 import { createAdminSessionToken, createSessionToken, verifySessionToken } from "./services/authService.js";
-import { attachPurchaseToUser, authenticateUser, confirmUserEmail, getUserByEmail, isVerifiedUserEmail, registerUser, setFavorite, updateUserPreferences } from "./services/usersService.js";
+import { attachPurchaseToUser, authenticateUser, confirmUserEmail, getUserByEmail, isVerifiedUserEmail, listUsers, registerUser, setFavorite, updateUserPreferences, updateUserRole } from "./services/usersService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -66,22 +66,57 @@ export function createApp() {
     response.status(email.ok ? 200 : 503).json(email);
   });
 
-  app.post("/api/admin/login", (request, response) => {
+  app.post("/api/admin/login", async (request, response, next) => {
     const email = String(request.body.email || "").trim().toLowerCase();
     const password = String(request.body.password || "");
     const configuredEmail = String(process.env.ADMIN_EMAIL || "").trim().toLowerCase();
     const configuredPassword = String(process.env.ADMIN_PASSWORD || "");
 
-    if (!configuredEmail || !configuredPassword || email !== configuredEmail || password !== configuredPassword) {
-      response.status(401).json({ message: "Credenciales admin incorrectas." });
-      return;
-    }
+    try {
+      if (configuredEmail && configuredPassword && email === configuredEmail && password === configuredPassword) {
+        response.json({ ok: true, token: createAdminSessionToken(email) });
+        return;
+      }
 
-    response.json({ ok: true, token: createAdminSessionToken(email) });
+      const user = await authenticateUser(email, password);
+
+      if (!user || user.role !== "admin") {
+        response.status(401).json({ message: "Credenciales admin incorrectas." });
+        return;
+      }
+
+      response.json({ ok: true, user, token: createSessionToken(user) });
+    } catch (error) {
+      next(error);
+    }
   });
 
   app.get("/api/admin/session", requireAdmin, (_request, response) => {
     response.json({ ok: true, role: "admin" });
+  });
+
+  app.get("/api/admin/users", requireAdmin, async (_request, response, next) => {
+    try {
+      const users = await listUsers();
+      response.json({ users });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.put("/api/admin/users/:email/role", requireAdmin, async (request, response, next) => {
+    try {
+      const user = await updateUserRole(request.params.email, request.body.role);
+
+      if (!user) {
+        response.status(404).json({ message: "Usuario no encontrado." });
+        return;
+      }
+
+      response.json({ user });
+    } catch (error) {
+      next(error);
+    }
   });
 
   app.post("/api/uploads/products", requireAdmin, upload.single("image"), async (request, response, next) => {
@@ -168,6 +203,12 @@ export function createApp() {
   app.post("/api/users", async (request, response, next) => {
     try {
       const user = await registerUser(request.body);
+
+      if (user.alreadyExists) {
+        response.status(409).json({ message: "Este email ya esta registrado. Inicia sesion para continuar." });
+        return;
+      }
+
       let email;
 
       try {

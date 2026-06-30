@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema(
     phone: { type: String, default: "" },
     passwordHash: { type: String, default: "" },
     passwordSalt: { type: String, default: "" },
+    role: { type: String, enum: ["user", "admin"], default: "user" },
     acceptsMarketing: { type: Boolean, default: true },
     emailVerified: { type: Boolean, default: false },
     confirmationToken: { type: String, default: "" },
