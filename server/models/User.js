@@ -5,6 +5,8 @@ const userSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     phone: { type: String, default: "" },
+    passwordHash: { type: String, default: "" },
+    passwordSalt: { type: String, default: "" },
     acceptsMarketing: { type: Boolean, default: true },
     emailVerified: { type: Boolean, default: false },
     confirmationToken: { type: String, default: "" },
@@ -18,6 +20,8 @@ const userSchema = new mongoose.Schema(
 userSchema.set("toJSON", {
   transform: (_document, returnedObject) => {
     returnedObject.id = returnedObject._id.toString();
+    delete returnedObject.passwordHash;
+    delete returnedObject.passwordSalt;
     delete returnedObject.confirmationToken;
     delete returnedObject.confirmationSentAt;
     delete returnedObject._id;

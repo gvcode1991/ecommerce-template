@@ -75,10 +75,12 @@ const emptyUserForm = {
   name: "",
   email: "",
   phone: "",
+  password: "",
   acceptsMarketing: true,
 };
 const emptyAccountLookup = {
   email: "",
+  password: "",
 };
 
 function normalizeStock(stock) {
@@ -157,7 +159,21 @@ export default function App() {
   const [userForm, setUserForm] = useState(emptyUserForm);
   const [accountLookup, setAccountLookup] = useState(emptyAccountLookup);
   const [userAccount, setUserAccount] = useState(null);
+  const [userToken, setUserToken] = useState(() => localStorage.getItem("ayre-user-token") || "");
+  const [adminLogin, setAdminLogin] = useState({ email: "", password: "" });
+  const [adminToken, setAdminToken] = useState(() => sessionStorage.getItem("ayre-admin-token") || "");
+  const [adminUnlocked, setAdminUnlocked] = useState(false);
   const [userStatus, setUserStatus] = useState({ state: "idle", message: "" });
+
+  useEffect(() => {
+    if (userToken) localStorage.setItem("ayre-user-token", userToken);
+    else localStorage.removeItem("ayre-user-token");
+  }, [userToken]);
+
+  useEffect(() => {
+    if (adminToken) sessionStorage.setItem("ayre-admin-token", adminToken);
+    else sessionStorage.removeItem("ayre-admin-token");
+  }, [adminToken]);
 
   useEffect(() => {
     const handleNavigation = () => setCurrentPath(window.location.pathname);
@@ -245,6 +261,14 @@ export default function App() {
   const isRegisterRoute = currentPath === "/registro";
   const isAccountRoute = currentPath === "/cuenta";
 
+  function adminHeaders(extraHeaders = {}) {
+    return adminToken ? { ...extraHeaders, Authorization: `Bearer ${adminToken}` } : extraHeaders;
+  }
+
+  function authHeaders(extraHeaders = {}) {
+    return userToken ? { ...extraHeaders, Authorization: `Bearer ${userToken}` } : extraHeaders;
+  }
+
   useEffect(() => {
     document.body.classList.toggle("has-open-layer", isCartOpen || isMenuOpen);
     return () => document.body.classList.remove("has-open-layer");
@@ -329,7 +353,8 @@ export default function App() {
       }
 
       setUserAccount(data.user);
-      setAccountLookup({ email: data.user.email });
+      setUserToken(data.token || "");
+      setAccountLookup({ email: data.user.email, password: "" });
       const emailSent = Boolean(data.email?.sent);
       setUserStatus({
         state: emailSent ? "success" : "error",
@@ -344,25 +369,31 @@ export default function App() {
 
   async function loadAccount(event) {
     event.preventDefault();
-    setUserStatus({ state: "loading", message: "Buscando cuenta..." });
+    setUserStatus({ state: "loading", message: "Iniciando sesion..." });
 
     try {
-      const response = await fetch(`${apiUrl}/users/${encodeURIComponent(accountLookup.email)}`);
+      const response = await fetch(`${apiUrl}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(accountLookup),
+      });
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "No encontramos esa cuenta.");
+        throw new Error(data.message || "No pudimos iniciar sesion.");
       }
 
       setUserAccount(data.user);
+      setUserToken(data.token || "");
       setUserForm({
         name: data.user.name || "",
         email: data.user.email || "",
         phone: data.user.phone || "",
+        password: "",
         acceptsMarketing: Boolean(data.user.acceptsMarketing),
       });
       setCheckout((currentCheckout) => ({ ...currentCheckout, email: data.user.email || currentCheckout.email }));
-      setUserStatus({ state: "success", message: data.user.emailVerified ? "Cuenta activa." : "Cuenta pendiente de confirmacion por email." });
+      setUserStatus({ state: "success", message: data.user.emailVerified ? "Sesion iniciada. Cuenta activa." : "Sesion iniciada. Cuenta pendiente de confirmacion por email." });
     } catch (error) {
       setUserStatus({ state: "error", message: error.message });
     }
@@ -376,7 +407,7 @@ export default function App() {
     try {
       const response = await fetch(`${apiUrl}/users/${encodeURIComponent(userAccount.email)}/preferences`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ acceptsMarketing }),
       });
       const data = await response.json();
@@ -405,7 +436,7 @@ export default function App() {
     try {
       const response = await fetch(`${apiUrl}/users/${encodeURIComponent(userAccount.email)}/favorites/${productId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ isFavorite }),
       });
       const data = await response.json();
@@ -438,6 +469,31 @@ export default function App() {
     setProductForm((currentProduct) => ({ ...currentProduct, [field]: value }));
   }
 
+  async function unlockAdmin(event) {
+    event.preventDefault();
+    setAdminStatus({ state: "loading", message: "Iniciando sesion admin..." });
+
+    try {
+      const response = await fetch(`${apiUrl}/admin/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(adminLogin),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Credenciales admin incorrectas.");
+      }
+
+      setAdminToken(data.token || "");
+      setAdminUnlocked(true);
+      setAdminStatus({ state: "success", message: "Panel admin desbloqueado." });
+    } catch (error) {
+      setAdminUnlocked(false);
+      setAdminStatus({ state: "error", message: error.message });
+    }
+  }
+
   function appendProductImage(url) {
     setProductForm((currentProduct) => {
       const images = currentProduct.images
@@ -468,6 +524,11 @@ export default function App() {
   }
 
   async function uploadProductImage() {
+    if (!adminUnlocked) {
+      setImageUpload((currentUpload) => ({ ...currentUpload, status: "error", message: "Desbloquea el panel admin antes de subir imagenes." }));
+      return;
+    }
+
     if (!imageUpload.file) {
       setImageUpload((currentUpload) => ({ ...currentUpload, status: "error", message: "Elegi una imagen primero." }));
       return;
@@ -480,6 +541,7 @@ export default function App() {
     try {
       const response = await fetch(`${apiUrl}/uploads/products`, {
         method: "POST",
+        headers: adminHeaders(),
         body: formData,
       });
       const data = await response.json();
@@ -523,6 +585,11 @@ export default function App() {
 
   async function submitProduct(event) {
     event.preventDefault();
+    if (!adminUnlocked) {
+      setAdminStatus({ state: "error", message: "Desbloquea el panel admin antes de guardar." });
+      return;
+    }
+
     setAdminStatus({ state: "loading", message: editingProductId ? "Actualizando producto..." : "Creando producto..." });
 
     const payload = {
@@ -539,7 +606,7 @@ export default function App() {
     try {
       const response = await fetch(`${apiUrl}/products${editingProductId ? `/${editingProductId}` : ""}`, {
         method: editingProductId ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: adminHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload),
       });
       const data = response.status === 204 ? {} : await response.json();
@@ -558,6 +625,11 @@ export default function App() {
   }
 
   async function removeProduct(productId) {
+    if (!adminUnlocked) {
+      setAdminStatus({ state: "error", message: "Desbloquea el panel admin antes de eliminar." });
+      return;
+    }
+
     const shouldDelete = window.confirm("Eliminar este producto del catalogo?");
 
     if (!shouldDelete) {
@@ -567,7 +639,7 @@ export default function App() {
     setAdminStatus({ state: "loading", message: "Eliminando producto..." });
 
     try {
-      const response = await fetch(`${apiUrl}/products/${productId}`, { method: "DELETE" });
+      const response = await fetch(`${apiUrl}/products/${productId}`, { method: "DELETE", headers: adminHeaders() });
 
       if (!response.ok) {
         const data = await response.json();
@@ -610,6 +682,11 @@ export default function App() {
       return;
     }
 
+    if (!userToken || !userAccount?.email || userAccount.email !== checkout.email.trim().toLowerCase()) {
+      setCheckoutStatus({ state: "error", message: "Inicia sesion con el mismo email antes de finalizar la compra." });
+      return;
+    }
+
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(checkout.email)) {
       setCheckoutStatus({ state: "error", message: "Revisa el email para poder enviarte la confirmacion." });
       return;
@@ -631,7 +708,7 @@ export default function App() {
     try {
       const response = await fetch(`${apiUrl}/orders`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           customer: checkout,
           items: cartLines.map((item) => ({ id: item.id, quantity: item.quantity, size: item.size, color: item.color })),
@@ -653,7 +730,7 @@ export default function App() {
       setCheckout(emptyCheckout);
       setCheckoutStatus({ state: "success", message: `Pedido recibido: ${data.order.id}. Te contactamos para coordinar.` });
       if (checkout.email && userAccount?.email === checkout.email.toLowerCase()) {
-        const userResponse = await fetch(`${apiUrl}/users/${encodeURIComponent(userAccount.email)}`);
+        const userResponse = await fetch(`${apiUrl}/users/${encodeURIComponent(userAccount.email)}`, { headers: authHeaders() });
         if (userResponse.ok) {
           const userData = await userResponse.json();
           setUserAccount(userData.user);
@@ -870,6 +947,20 @@ export default function App() {
             <button className="secondary-admin-button" type="button" onClick={resetProductForm}>Nuevo producto</button>
           </div>
 
+          <form className="admin-form admin-unlock" onSubmit={unlockAdmin}>
+            <h3>Acceso admin</h3>
+            <label>
+              Email admin
+              <input value={adminLogin.email} onChange={(event) => { setAdminLogin((current) => ({ ...current, email: event.target.value })); setAdminUnlocked(false); setAdminToken(""); }} type="email" placeholder="admin@ayre.com.ar" />
+            </label>
+            <label>
+              Contrasena admin
+              <input value={adminLogin.password} onChange={(event) => { setAdminLogin((current) => ({ ...current, password: event.target.value })); setAdminUnlocked(false); setAdminToken(""); }} type="password" placeholder="Contrasena privada" />
+            </label>
+            {adminStatus.message && <p className={`checkout-message ${adminStatus.state}`}>{adminStatus.message}</p>}
+            <button className="secondary-admin-button" type="submit">Desbloquear panel</button>
+          </form>
+
           <div className="admin-layout">
             <form className="admin-form" onSubmit={submitProduct}>
               <h3>{editingProductId ? "Editar producto" : "Agregar producto"}</h3>
@@ -944,9 +1035,9 @@ export default function App() {
                 <textarea value={productForm.description} onChange={(event) => updateProductForm("description", event.target.value)} rows="3" placeholder="Descripcion corta para el catalogo" required />
               </label>
 
-              {adminStatus.message && <p className={`checkout-message ${adminStatus.state}`}>{adminStatus.message}</p>}
+              {adminStatus.message && adminUnlocked && <p className={`checkout-message ${adminStatus.state}`}>{adminStatus.message}</p>}
 
-              <button className="checkout-button" type="submit" disabled={adminStatus.state === "loading"}>
+              <button className="checkout-button" type="submit" disabled={adminStatus.state === "loading" || !adminUnlocked}>
                 <Save size={18} />
                 {editingProductId ? "Guardar cambios" : "Crear producto"}
               </button>
@@ -986,6 +1077,7 @@ export default function App() {
                 <label>Nombre<input value={userForm.name} onChange={(event) => updateUserForm("name", event.target.value)} type="text" required /></label>
                 <label>Email<input value={userForm.email} onChange={(event) => updateUserForm("email", event.target.value)} type="email" required /></label>
                 <label>Telefono<input value={userForm.phone} onChange={(event) => updateUserForm("phone", event.target.value)} type="tel" /></label>
+                <label>Contrasena<input value={userForm.password} onChange={(event) => updateUserForm("password", event.target.value)} type="password" minLength="8" required /></label>
                 <label className="checkbox-label"><input checked={userForm.acceptsMarketing} onChange={(event) => updateUserForm("acceptsMarketing", event.target.checked)} type="checkbox" /> Recibir novedades por email</label>
               </div>
               {userStatus.message && <p className={`checkout-message ${userStatus.state}`}>{userStatus.message}</p>}
@@ -1006,19 +1098,20 @@ export default function App() {
             <div>
               <p className="eyebrow">Mi cuenta</p>
               <h2>Administracion de cuenta</h2>
-              <p className="catalog-note">Consulta tu cuenta, preferencias, favoritos y compras asociadas a tu email.</p>
+              <p className="catalog-note">Inicia sesion para consultar tus preferencias, favoritos y compras.</p>
             </div>
           </div>
           <div className="account-layout">
             <form className="admin-form" onSubmit={loadAccount}>
-              <h3>Buscar cuenta</h3>
+              <h3>Iniciar sesion</h3>
               <label>Email registrado<input value={accountLookup.email} onChange={(event) => updateAccountLookup("email", event.target.value)} type="email" required /></label>
-              <button className="checkout-button" type="submit">Ver mi cuenta</button>
+              <label>Contrasena<input value={accountLookup.password} onChange={(event) => updateAccountLookup("password", event.target.value)} type="password" required /></label>
+              <button className="checkout-button" type="submit">Entrar</button>
               {userStatus.message && <p className={`checkout-message ${userStatus.state}`}>{userStatus.message}</p>}
             </form>
             <div className="account-summary">
               <h3>{userAccount ? userAccount.email : "Cuenta"}</h3>
-              <p>{userAccount ? `Estado: ${userAccount.emailVerified ? "activa" : "pendiente de confirmacion"}` : "Ingresa tu email para ver tus compras y preferencias."}</p>
+              <p>{userAccount ? `Estado: ${userAccount.emailVerified ? "activa" : "pendiente de confirmacion"}` : "Ingresa con tu email y contrasena para ver tus compras y preferencias."}</p>
               {userAccount && (
                 <>
                   <label className="checkbox-label account-check"><input checked={Boolean(userAccount.acceptsMarketing)} onChange={(event) => saveAccountPreferences(event.target.checked)} type="checkbox" /> Recibir notificaciones al mail</label>

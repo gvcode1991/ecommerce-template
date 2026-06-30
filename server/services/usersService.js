@@ -1,17 +1,25 @@
 import { connectToDatabase } from "../db/mongo.js";
 import { User } from "../models/User.js";
 import crypto from "node:crypto";
+import { hashPassword, verifyPassword } from "./authService.js";
 
 const memoryUsers = new Map();
 
 export async function registerUser(userData) {
   const user = normalizeUser(userData);
+  const password = String(userData.password || "");
+
+  if (password.length < 8) {
+    throw new Error("La contrasena debe tener al menos 8 caracteres.");
+  }
+
+  const passwordData = hashPassword(password);
   const confirmationToken = crypto.randomBytes(24).toString("hex");
   const database = await connectToDatabase();
 
   if (!database.connected) {
     const currentUser = memoryUsers.get(user.email) || { favorites: [], purchases: [], emailVerified: false };
-    const savedUser = { ...currentUser, ...user, confirmationToken, confirmationSentAt: new Date().toISOString() };
+    const savedUser = { ...currentUser, ...user, passwordHash: passwordData.hash, passwordSalt: passwordData.salt, confirmationToken, confirmationSentAt: new Date().toISOString() };
     memoryUsers.set(user.email, savedUser);
     return savedUser;
   }
@@ -19,13 +27,31 @@ export async function registerUser(userData) {
   const savedUser = await User.findOneAndUpdate(
     { email: user.email },
     {
-      $set: { ...user, confirmationToken, confirmationSentAt: new Date() },
+      $set: { ...user, passwordHash: passwordData.hash, passwordSalt: passwordData.salt, confirmationToken, confirmationSentAt: new Date() },
       $setOnInsert: { favorites: [], purchases: [], emailVerified: false },
     },
     { upsert: true, returnDocument: "after", runValidators: true },
   );
 
   return { ...savedUser.toJSON(), confirmationToken };
+}
+
+export async function authenticateUser(email, password) {
+  const normalizedEmail = normalizeEmail(email);
+  const database = await connectToDatabase();
+
+  if (!database.connected) {
+    const user = memoryUsers.get(normalizedEmail);
+    return user && verifyPassword(password, user.passwordSalt, user.passwordHash) ? sanitizeUser(user) : null;
+  }
+
+  const user = await User.findOne({ email: normalizedEmail }).populate("purchases");
+
+  if (!user || !verifyPassword(password, user.passwordSalt, user.passwordHash)) {
+    return null;
+  }
+
+  return user.toJSON();
 }
 
 export async function confirmUserEmail(token) {
