@@ -1,8 +1,30 @@
 const resendApiUrl = "https://api.resend.com";
 
+function cleanEnvValue(value) {
+  return String(value || "").trim().replace(/^["']|["']$/g, "");
+}
+
+function getResendApiKey() {
+  return cleanEnvValue(process.env.RESEND_API_KEY);
+}
+
+function getResendFrom() {
+  return cleanEnvValue(process.env.RESEND_FROM);
+}
+
+function getSafeApiKeyInfo() {
+  const apiKey = getResendApiKey();
+
+  return {
+    length: apiKey.length,
+    prefix: apiKey.slice(0, 3),
+    suffix: apiKey.length > 6 ? apiKey.slice(-4) : "",
+  };
+}
+
 function getResendHeaders() {
   return {
-    Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+    Authorization: `Bearer ${getResendApiKey()}`,
     "Content-Type": "application/json",
   };
 }
@@ -22,40 +44,21 @@ async function readResendResponse(response) {
 }
 
 export function isEmailConfigured() {
-  return Boolean(process.env.RESEND_API_KEY && process.env.RESEND_FROM);
+  return Boolean(getResendApiKey() && getResendFrom());
 }
 
 export async function verifyEmailConnection() {
   if (!isEmailConfigured()) {
-    return { ok: false, configured: false, reason: "missing-resend" };
+    return { ok: false, configured: false, reason: "missing-resend", apiKey: getSafeApiKeyInfo() };
   }
 
-  try {
-    const response = await fetch(`${resendApiUrl}/domains`, {
-      headers: getResendHeaders(),
-      signal: AbortSignal.timeout(10000),
-    });
-    const data = await readResendResponse(response);
-
-    if (!response.ok) {
-      return {
-        ok: false,
-        configured: true,
-        reason: "resend-rejected",
-        status: response.status,
-        message: data.message || data.error || "Resend rechazo la solicitud.",
-      };
-    }
-
-    return { ok: true, configured: true };
-  } catch (error) {
-    return {
-      ok: false,
-      configured: true,
-      reason: "resend-unreachable",
-      message: error.message,
-    };
-  }
+  return {
+    ok: true,
+    configured: true,
+    provider: "resend",
+    message: "Resend esta configurado. El envio real se valida al crear la cuenta.",
+    apiKey: getSafeApiKeyInfo(),
+  };
 }
 
 export async function sendAccountConfirmationEmail(user, token) {
@@ -69,7 +72,7 @@ export async function sendAccountConfirmationEmail(user, token) {
     method: "POST",
     headers: getResendHeaders(),
     body: JSON.stringify({
-      from: process.env.RESEND_FROM,
+      from: getResendFrom(),
       to: user.email,
       subject: "Confirma tu cuenta AyRe",
       text: `Hola ${user.name}, confirma tu cuenta para poder comprar en AyRe: ${confirmUrl}`,
