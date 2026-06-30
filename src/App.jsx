@@ -270,11 +270,12 @@ export default function App() {
 
       setUserAccount(data.user);
       setAccountLookup({ email: data.user.email });
+      const emailSent = Boolean(data.email?.sent);
       setUserStatus({
-        state: data.email?.sent ? "success" : "loading",
-        message: data.email?.sent
+        state: emailSent ? "success" : "error",
+        message: emailSent
           ? "Te enviamos un email para activar tu cuenta antes de comprar."
-          : "Cuenta creada. Falta configurar SMTP para enviar el email de activacion.",
+          : data.email?.message || "Cuenta creada, pero no pudimos enviar el email de activacion. Revisa SMTP en Render.",
       });
     } catch (error) {
       setUserStatus({ state: "error", message: `${error.message} Revisa que la API este corriendo.` });

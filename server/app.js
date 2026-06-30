@@ -130,7 +130,19 @@ export function createApp() {
   app.post("/api/users", async (request, response, next) => {
     try {
       const user = await registerUser(request.body);
-      const email = await sendAccountConfirmationEmail(user, user.confirmationToken);
+      let email;
+
+      try {
+        email = await sendAccountConfirmationEmail(user, user.confirmationToken);
+      } catch (error) {
+        console.warn(`No pudimos enviar el email de activacion: ${error.message}`);
+        email = {
+          sent: false,
+          reason: "send-failed",
+          message: "Cuenta creada, pero no pudimos enviar el email de activacion. Revisa SMTP en Render.",
+        };
+      }
+
       const { confirmationToken, ...publicUser } = user;
       response.status(201).json({ user: publicUser, email });
     } catch (error) {
