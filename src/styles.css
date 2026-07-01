@@ -256,7 +256,7 @@ h2 { margin-bottom: 0; font-size: clamp(1.9rem, 3.5vw, 3.15rem); font-weight: 62
 .hero-text { max-width: 480px; color: rgba(255, 255, 255, 0.85); font-size: clamp(1.05rem, 2vw, 1.28rem); line-height: 1.55; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
 
-.primary-action, .secondary-action, .newsletter-form button, .checkout-button, .add-button {
+.primary-action, .secondary-action, .checkout-button, .add-button {
   display: inline-flex;
   min-height: 48px;
   align-items: center;
@@ -267,7 +267,7 @@ h2 { margin-bottom: 0; font-size: clamp(1.9rem, 3.5vw, 3.15rem); font-weight: 62
   cursor: pointer;
   font-weight: 650;
 }
-.primary-action, .newsletter-form button, .checkout-button, .add-button { background: linear-gradient(135deg, var(--clay), var(--sage)); color: white; }
+.primary-action, .checkout-button, .add-button { background: linear-gradient(135deg, var(--clay), var(--sage)); color: white; }
 .secondary-action { border: 1px solid rgba(255, 255, 255, 0.28); background: rgba(255, 255, 255, 0.14); color: white; }
 
 .intro-band { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); }
@@ -367,7 +367,7 @@ h2 { margin-bottom: 0; font-size: clamp(1.9rem, 3.5vw, 3.15rem); font-weight: 62
 .shop-tools { display: flex; align-items: end; gap: 10px; }
 .search-box { display: grid; gap: 6px; color: var(--muted); font-size: 0.82rem; font-weight: 620; }
 .search-input { display: flex; min-height: 48px; align-items: center; gap: 8px; padding: 0 16px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--muted); }
-.search-input input, .shop-tools select, .newsletter-form input { min-height: 48px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); outline: 0; }
+.search-input input, .shop-tools select { min-height: 48px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); outline: 0; }
 .search-input input { width: min(44vw, 300px); min-height: auto; padding: 0; border: 0; }
 .shop-tools select { padding: 0 38px 0 16px; font-weight: 580; }
 
@@ -728,9 +728,45 @@ h2 { margin-bottom: 0; font-size: clamp(1.9rem, 3.5vw, 3.15rem); font-weight: 62
   min-height: auto;
 }
 
-.contact-band { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: clamp(38px, 6vw, 76px); background: var(--night); color: white; }
-.newsletter-form { display: flex; width: min(100%, 460px); gap: 10px; }
-.newsletter-form input { flex: 1; min-width: 0; padding: 0 18px; }
+.contact-band {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(220px, 340px);
+  align-items: center;
+  gap: clamp(18px, 4vw, 44px);
+  padding: clamp(38px, 6vw, 76px);
+  background: var(--night);
+  color: white;
+}
+.contact-band h2 {
+  max-width: 720px;
+}
+.contact-band p:not(.eyebrow) {
+  max-width: 640px;
+  margin: 14px 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.55;
+}
+.shipping-icon {
+  display: grid;
+  width: clamp(70px, 9vw, 96px);
+  height: clamp(70px, 9vw, 96px);
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  color: #f4dfbf;
+  background: rgba(255, 255, 255, 0.06);
+}
+.shipping-note {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 14px 18px;
+  color: rgba(255, 255, 255, 0.86);
+  background: rgba(255, 255, 255, 0.08);
+  font-weight: 560;
+}
 
 .site-footer {
   display: grid;
@@ -1279,8 +1315,20 @@ h2 { margin-bottom: 0; font-size: clamp(1.9rem, 3.5vw, 3.15rem); font-weight: 62
   .category-tile span {
     font-size: clamp(2.3rem, 14vw, 4.4rem);
   }
-  .section-heading, .contact-band, .newsletter-form, .shop-tools, .site-footer { align-items: stretch; flex-direction: column; }
-  .search-input input, .shop-tools select, .newsletter-form button { width: 100%; }
+  .section-heading, .shop-tools, .site-footer { align-items: stretch; flex-direction: column; }
+  .contact-band {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+  .shipping-icon {
+    width: 66px;
+    height: 66px;
+  }
+  .shipping-note {
+    width: 100%;
+    border-radius: 8px;
+  }
+  .search-input input, .shop-tools select { width: 100%; }
   .cart-panel {
     grid-template-rows: auto auto minmax(0, 1fr) auto;
     overflow: hidden;

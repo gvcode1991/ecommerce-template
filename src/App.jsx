@@ -1,4 +1,4 @@
-import { Edit3, Facebook, Heart, Home, Instagram, Menu, Minus, Plus, Save, Search, ShoppingBag, Trash2, UserRound, X } from "lucide-react";
+import { Edit3, Facebook, Heart, Home, Instagram, Menu, Minus, PackageCheck, Plus, Save, Search, ShoppingBag, Trash2, Truck, UserRound, X } from "lucide-react";
 import React from "react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -1165,14 +1165,18 @@ export default function App() {
 
         {!isAdminRoute && !isRegisterRoute && !isAccountRoute && (
         <section className="contact-band" id="contacto">
-          <div>
-            <p className="eyebrow">AyRe team</p>
-            <h2>Recibi novedades de nuevos ingresos</h2>
+          <div className="shipping-icon" aria-hidden="true">
+            <Truck size={38} />
           </div>
-          <form className="newsletter-form" onSubmit={(event) => event.preventDefault()}>
-            <input type="email" placeholder="tu@email.com" aria-label="Email" required />
-            <button type="submit">Sumarme</button>
-          </form>
+          <div>
+            <p className="eyebrow">Envios</p>
+            <h2>Compras desde cualquier punto del pais</h2>
+            <p>Preparamos tu pedido y coordinamos la entrega por WhatsApp para que recibas tus prendas y accesorios de forma simple.</p>
+          </div>
+          <div className="shipping-note">
+            <PackageCheck size={24} />
+            <span>Despacho coordinado y seguimiento del pedido.</span>
+          </div>
         </section>
         )}
       </main>
