@@ -40,7 +40,7 @@ const fallbackProducts = [
 
 const productImages = Object.fromEntries(fallbackProducts.map((product) => [product.id, product.image]));
 const categories = ["Todos", "Conjuntos", "Camisetas", "Selecciones", "Clubes", "Accesorios"];
-const appVersion = "1.5.0";
+const appVersion = "1.5.1";
 const apiUrl = import.meta.env.VITE_API_URL || "/api";
 const formatter = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
 const availableSizes = ["4", "6", "8", "10", "12", "14", "S", "M", "L", "XL"];
@@ -1193,7 +1193,8 @@ export default function App() {
         </div>
 
         <a className="footer-brand" href="#inicio" aria-label="AyRe inicio">
-          <img src={logoAyre} alt="AyRe" />
+          <img src={logoAyre} alt="" />
+          <span>AyRe</span>
         </a>
 
         <div className="footer-legal">
