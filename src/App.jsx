@@ -1,8 +1,16 @@
-import { Edit3, Facebook, Heart, Home, Instagram, Menu, Minus, PackageCheck, Plus, Save, Search, ShoppingBag, Trash2, Truck, UserRound, X } from "lucide-react";
+import { Edit3, Facebook, Heart, Instagram, PackageCheck, Save, Search, ShoppingBag, Trash2, Truck, UserRound, X } from "lucide-react";
 import React from "react";
 import { useEffect, useMemo, useState } from "react";
 
+import { CartDrawer } from "./components/cart/CartDrawer";
+import { Header } from "./components/layout/Header";
+import { Hero } from "./components/layout/Hero";
+import { ProductGrid } from "./components/products/ProductGrid";
 import { images } from "./config/images";
+import { appVersion, categories, freeShippingThreshold, shippingCost } from "./config/storeConfig";
+import { useSavedCart } from "./hooks/useSavedCart";
+import { formatter } from "./utils/formatters";
+import { getProductSizes, normalizeStock, parseListText, parseStockText, stockToText, stockTotal } from "./utils/stock";
 
 const cloudinaryImages = {
   setBocaNino: "https://res.cloudinary.com/dwifi7niu/image/upload/v1782932145/WhatsApp_Image_2026-06-28_at_8.23.41_PM_3_i4i90z.jpg",
@@ -56,13 +64,7 @@ const fallbackProducts = [
 }));
 
 const productImages = Object.fromEntries(fallbackProducts.map((product) => [product.id, product.image]));
-const categories = ["Todos", "Conjuntos", "Camisetas", "Selecciones", "Clubes", "Accesorios"];
-const appVersion = "1.5.5";
 const apiUrl = import.meta.env.VITE_API_URL || "/api";
-const formatter = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
-const availableSizes = ["4", "6", "8", "10", "12", "14", "S", "M", "L", "XL"];
-const freeShippingThreshold = 60000;
-const shippingCost = 4500;
 const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER || "5491123456789";
 const emptyCheckout = {
   name: "",
@@ -99,63 +101,6 @@ const emptyAccountLookup = {
   email: "",
   password: "",
 };
-
-function normalizeStock(stock) {
-  if (Array.isArray(stock)) {
-    return stock
-      .map((item) => ({ size: String(item?.size || "").trim(), quantity: Number(item?.quantity || 0) }))
-      .filter((item) => item.size);
-  }
-
-  const quantity = Number(stock || 0);
-  return quantity > 0 ? [{ size: "Unico", quantity }] : [];
-}
-
-function stockToText(stock) {
-  return normalizeStock(stock).map((item) => `${item.size}: ${item.quantity}`).join("\n");
-}
-
-function stockTotal(stock) {
-  return normalizeStock(stock).reduce((sum, item) => sum + item.quantity, 0);
-}
-
-function parseStockText(stockText) {
-  return String(stockText || "")
-    .split(/[\n,]+/)
-    .map((line) => {
-      const [size, quantity] = line.split(/[:=]/).map((part) => part.trim());
-      return { size, quantity: Number(quantity || 0) };
-    })
-    .filter((item) => item.size);
-}
-
-function parseListText(value) {
-  return String(value || "")
-    .split(/[\n,]+/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function getProductSizes(product) {
-  const stock = normalizeStock(product?.stock);
-  return stock.length ? stock.filter((item) => item.quantity > 0).map((item) => item.size) : availableSizes;
-}
-
-function useSavedCart() {
-  const [cart, setCart] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("ayre-cart") || "[]");
-    } catch {
-      return [];
-    }
-  });
-
-  useEffect(() => {
-    localStorage.setItem("ayre-cart", JSON.stringify(cart));
-  }, [cart]);
-
-  return [cart, setCart];
-}
 
 export default function App() {
   const [cart, setCart] = useSavedCart();
@@ -784,71 +729,21 @@ export default function App() {
 
   return (
     <>
-      <header className="site-header">
-        <div className="header-main">
-          <button className="icon-action menu-button" type="button" aria-label="Abrir menu" onClick={() => setMenuOpen(true)}>
-            <Menu size={25} />
-          </button>
-
-          <button className="mobile-search-button" type="button" aria-label="Buscar productos" onClick={() => navigateToSection("/", "productos")}>
-            <Search size={21} />
-          </button>
-
-          <a className="brand" href="/" aria-label="AyRe inicio" onClick={(event) => { event.preventDefault(); navigateTo("/"); }}>
-            <img className="brand-mark" src={logoAyre} alt="" />
-            <span className="brand-name">AyRe</span>
-          </a>
-
-          <label className="header-search">
-            <Search size={24} />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="Buscar camisetas, conjuntos, clubes..." />
-          </label>
-
-          <div className="header-actions" aria-label="Accesos rapidos">
-            <a href="/cuenta" aria-label="Favoritos" onClick={(event) => { event.preventDefault(); navigateTo("/cuenta"); }}><Heart size={24} /><span>Favoritos</span></a>
-            <a href="/cuenta" aria-label="Mi cuenta" onClick={(event) => { event.preventDefault(); navigateTo("/cuenta"); }}><UserRound size={23} /><span>Mi cuenta</span></a>
-            <a href="#contacto" aria-label="Tiendas"><Home size={23} /><span>Tiendas</span></a>
-            <button className="header-cart" type="button" aria-label="Abrir carrito" onClick={() => setCartOpen(true)}>
-              <ShoppingBag size={24} />
-              <span>Cesta</span>
-              <strong>{cartQuantity}</strong>
-            </button>
-          </div>
-
-          <button className="mobile-account-button" type="button" aria-label="Mi cuenta" onClick={() => navigateTo("/cuenta")}>
-            <UserRound size={20} />
-          </button>
-
-          <button className="icon-action cart-button" type="button" aria-label="Abrir carrito" onClick={() => setCartOpen(true)}>
-            <ShoppingBag size={20} />
-            <strong>{cartQuantity}</strong>
-          </button>
-        </div>
-
-        <nav className="main-nav" aria-label="Secciones">
-          <a href="#productos">Coleccion</a>
-          <a href="#productos">Camisetas</a>
-          <a href="#productos">Conjuntos</a>
-          <a href="#coleccion">AyRe</a>
-          <a href="#contacto">Contacto</a>
-          <a href="/admin" target="_blank" rel="noreferrer">Admin</a>
-        </nav>
-      </header>
+      <Header
+        cartQuantity={cartQuantity}
+        logoAyre={logoAyre}
+        navigateTo={navigateTo}
+        navigateToSection={navigateToSection}
+        query={query}
+        setCartOpen={setCartOpen}
+        setMenuOpen={setMenuOpen}
+        setQuery={setQuery}
+      />
 
       <main id={isAdminRoute ? "admin" : isRegisterRoute ? "registro" : isAccountRoute ? "cuenta" : "inicio"}>
         {!isAdminRoute && !isRegisterRoute && !isAccountRoute && (
           <>
-        <section className="hero" style={{ "--hero-image": cssImageUrl(images.heroDesktop), "--hero-mobile-image": cssImageUrl(images.heroMobile) }}>
-          <div className="hero-copy">
-            <p className="eyebrow">AyRe indumentaria</p>
-            <h1>Prendas y accesorios para tu estilo diario</h1>
-            <p className="hero-text">Remeras de selecciones, conjuntos deportivos y relojes seleccionados para completar tu look.</p>
-            <div className="hero-actions">
-              <a className="primary-action" href="#productos">Ver catalogo</a>
-              <a className="secondary-action" href="#coleccion">Conocer AyRe</a>
-            </div>
-          </div>
-        </section>
+        <Hero cssImageUrl={cssImageUrl} images={images} />
 
         <section className="shipping-band" aria-label="Beneficio de envio">
           <div>
@@ -936,44 +831,17 @@ export default function App() {
           </div>
         </section>
 
-        <section className="shop-section" id="productos">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Catalogo</p>
-              <h2>Productos destacados</h2>
-              {catalogStatus.state === "fallback" && <p className="catalog-note">{catalogStatus.message}</p>}
-            </div>
-            <div className="catalog-shortcuts" aria-label="Categorias del catalogo">
-              <button className={category === "Todos" ? "is-active" : ""} type="button" onClick={() => { setQuery(""); setCategory("Todos"); }}>Catalogo completo</button>
-              <button className={category === "Selecciones" ? "is-active" : ""} type="button" onClick={() => { setQuery(""); setCategory("Selecciones"); }}>Remeras de selecciones</button>
-              <button className={category === "Conjuntos" ? "is-active" : ""} type="button" onClick={() => { setQuery(""); setCategory("Conjuntos"); }}>Conjuntos deportivos</button>
-              <button className={category === "Accesorios" ? "is-active" : ""} type="button" onClick={() => { setQuery(""); setCategory("Accesorios"); }}>Relojes y accesorios</button>
-            </div>
-          </div>
-
-          <div className="product-grid" aria-live="polite">
-            {visibleProducts.length ? visibleProducts.map((product) => (
-              <article className="product-card" key={product.id}>
-                <div className="product-media" role="button" tabIndex={0} onClick={() => navigateTo(`/producto/${product.id}`)} onKeyDown={(event) => { if (event.key === "Enter") navigateTo(`/producto/${product.id}`); }}>
-                  <img src={product.image} alt={product.name} loading="lazy" />
-                  <span>{product.badge}</span>
-                </div>
-                <div className="product-info">
-                  <div className="product-meta" role="button" tabIndex={0} onClick={() => navigateTo(`/producto/${product.id}`)} onKeyDown={(event) => { if (event.key === "Enter") navigateTo(`/producto/${product.id}`); }}>
-                    <div><h3>{product.name}</h3><p>{product.description}</p><small>{stockTotal(product.stock)} disponibles</small></div>
-                    <span className="price">{formatter.format(product.price)}</span>
-                  </div>
-                  <div className="product-actions">
-                    <button className="add-button" type="button" onClick={() => addToCart(product.id)}>Agregar</button>
-                    <button className="favorite-icon-button" type="button" aria-label={`Guardar ${product.name}`} onClick={() => toggleFavorite(product.id)}>
-                      <Heart size={18} fill={(userAccount?.favorites || []).includes(product.id) ? "currentColor" : "none"} />
-                    </button>
-                  </div>
-                </div>
-              </article>
-            )) : <p className="empty-state">No encontramos productos con esos filtros.</p>}
-          </div>
-        </section>
+        <ProductGrid
+          addToCart={addToCart}
+          catalogStatus={catalogStatus}
+          category={category}
+          navigateTo={navigateTo}
+          setCategory={setCategory}
+          setQuery={setQuery}
+          toggleFavorite={toggleFavorite}
+          userAccount={userAccount}
+          visibleProducts={visibleProducts}
+        />
           </>
         )}
 
@@ -1223,155 +1091,26 @@ export default function App() {
         </div>
       </footer>
 
-      <aside className={`cart-panel ${isCartOpen ? "is-open" : ""}`} aria-label="Carrito" aria-hidden={!isCartOpen}>
-        <div className="cart-header">
-          <div><p className="eyebrow">Compra</p><h2>Carrito</h2></div>
-          <button className="icon-action close-cart" type="button" aria-label="Cerrar carrito" onClick={() => setCartOpen(false)}><X size={26} /></button>
-        </div>
-        <div className="checkout-steps" aria-label="Pasos de compra">
-          <button type="button" className={checkoutStep === 1 ? "is-active" : ""} onClick={() => setCheckoutStep(1)}>1. Productos</button>
-          <button type="button" className={checkoutStep === 2 ? "is-active" : ""} onClick={() => cartLines.length && setCheckoutStep(2)}>2. Datos</button>
-          <button type="button" className={checkoutStep === 3 ? "is-active" : ""} onClick={() => cartLines.length && setCheckoutStep(3)}>3. Confirmar</button>
-        </div>
-        <div className="cart-items">
-          {checkoutStep === 1 && (
-            <>
-              {cartLines.length ? cartLines.map((item) => (
-                <article className="cart-line" key={item.id}>
-                  <img src={item.image} alt="" />
-                  <div>
-                    <h3>{item.name}</h3>
-                    <p>{formatter.format(item.price)} x {item.quantity}</p>
-                    <label className="line-size">
-                      Talle
-                      <select value={item.size} onChange={(event) => updateCartSize(item.id, event.target.value)} required>
-                        <option value="">Elegir</option>
-                        {getProductSizes(item).map((size) => <option value={size} key={`${item.id}-${size}`}>{size}</option>)}
-                      </select>
-                    </label>
-                    {item.colors?.length > 0 && (
-                      <label className="line-size">
-                        Color
-                        <select value={item.color} onChange={(event) => updateCartColor(item.id, event.target.value)} required>
-                          <option value="">Elegir</option>
-                          {item.colors.map((color) => <option value={color} key={`${item.id}-${color}`}>{color}</option>)}
-                        </select>
-                      </label>
-                    )}
-                    <div className="qty-controls" aria-label={`Cantidad de ${item.name}`}>
-                      <button type="button" onClick={() => updateQuantity(item.id, -1)} aria-label="Restar"><Minus size={16} /></button>
-                      <strong>{item.quantity}</strong>
-                      <button type="button" onClick={() => updateQuantity(item.id, 1)} aria-label="Sumar"><Plus size={16} /></button>
-                    </div>
-                  </div>
-                  <strong>{formatter.format(item.price * item.quantity)}</strong>
-                </article>
-              )) : <p className="empty-state">Tu carrito esta vacio.</p>}
-              {cartLines.length > 0 && <button className="clear-cart-button" type="button" onClick={clearCart}>Vaciar carrito</button>}
-            </>
-          )}
-
-          {checkoutStep === 2 && (
-            <form className="checkout-form staged-form" onSubmit={submitOrder}>
-              <div className="checkout-grid">
-                <label>
-                  Nombre
-                  <input value={checkout.name} onChange={(event) => updateCheckout("name", event.target.value)} type="text" placeholder="Nombre y apellido" required />
-                </label>
-                <label>
-                  Telefono
-                  <input value={checkout.phone} onChange={(event) => updateCheckout("phone", event.target.value)} type="tel" placeholder="WhatsApp" required />
-                </label>
-                <label>
-                  Email registrado
-                  <input value={checkout.email} onChange={(event) => updateCheckout("email", event.target.value)} type="email" placeholder="tu@email.com" required />
-                </label>
-                <label>
-                  Entrega
-                  <select value={checkout.delivery} onChange={(event) => updateCheckout("delivery", event.target.value)}>
-                    <option>Retiro en tienda</option>
-                    <option>Envio a domicilio</option>
-                    <option>Coordinar por WhatsApp</option>
-                  </select>
-                </label>
-              </div>
-
-              {checkout.delivery === "Envio a domicilio" && (
-                <label>
-                  Direccion
-                  <input value={checkout.address} onChange={(event) => updateCheckout("address", event.target.value)} type="text" placeholder="Calle, numero, localidad" required />
-                </label>
-              )}
-
-              <label>
-                Pago
-                <select value={checkout.payment} onChange={(event) => updateCheckout("payment", event.target.value)}>
-                  <option>Efectivo</option>
-                  <option>Transferencia</option>
-                  <option>Mercado Pago</option>
-                  <option>Coordinar</option>
-                </select>
-              </label>
-              <p className="payment-help">
-                {checkout.payment === "Transferencia" && "Al confirmar, guardamos el pedido y te pasamos los datos de transferencia por WhatsApp."}
-                {checkout.payment === "Mercado Pago" && "Dejamos el pedido reservado y te enviamos el link de Mercado Pago para completar el pago."}
-                {checkout.payment === "Efectivo" && "Pagas al retirar o al coordinar la entrega."}
-                {checkout.payment === "Coordinar" && "Te contactamos para elegir el metodo de pago mas comodo."}
-              </p>
-
-              <label className="checkbox-label checkout-check">
-                <input checked={checkout.notifyByEmail} onChange={(event) => updateCheckout("notifyByEmail", event.target.checked)} type="checkbox" />
-                Enviarme confirmacion y novedades al email
-              </label>
-
-              <label>
-                Comentarios
-                <textarea value={checkout.notes} onChange={(event) => updateCheckout("notes", event.target.value)} placeholder="Nombre en camiseta, colores o cualquier detalle del pedido" rows="3" />
-              </label>
-            </form>
-          )}
-
-          {checkoutStep === 3 && (
-            <div className="order-review">
-              <h3>Revisar pedido</h3>
-              {cartLines.map((item) => (
-                <div className="review-line" key={`review-${item.id}`}>
-                  <span>{item.name} - talle {item.size || "sin talle"}{item.color ? ` - color ${item.color}` : ""} x{item.quantity}</span>
-                  <strong>{formatter.format(item.price * item.quantity)}</strong>
-                </div>
-              ))}
-              <div className="review-customer">
-                <span>{checkout.name}</span>
-                <span>{checkout.phone}</span>
-                <span>{checkout.email}</span>
-                <span>{checkout.delivery}{checkout.address ? ` - ${checkout.address}` : ""}</span>
-                <span>{checkout.payment}</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <form className="cart-footer" onSubmit={submitOrder}>
-          <div className="checkout-summary" aria-label="Resumen de compra">
-            <div><span>Subtotal</span><strong>{formatter.format(cartSubtotal)}</strong></div>
-            <div><span>Envio</span><strong>{currentShippingCost ? formatter.format(currentShippingCost) : "Sin cargo"}</strong></div>
-            <div className="cart-total"><span>Total</span><strong>{formatter.format(cartTotal)}</strong></div>
-            {checkout.delivery === "Envio a domicilio" && cartSubtotal < freeShippingThreshold && (
-              <p>Te faltan {formatter.format(freeShippingThreshold - cartSubtotal)} para envio gratis.</p>
-            )}
-          </div>
-          {checkoutStatus.message && <p className={`checkout-message ${checkoutStatus.state}`}>{checkoutStatus.message}</p>}
-          <a className="whatsapp-checkout" href={`https://wa.me/${whatsappNumber}?text=${buildWhatsAppMessage()}`} target="_blank" rel="noreferrer">
-            Consultar por WhatsApp
-          </a>
-          <div className="cart-step-actions">
-            {checkoutStep > 1 && <button className="secondary-step-button" type="button" onClick={() => setCheckoutStep((currentStep) => Math.max(currentStep - 1, 1))}>Volver</button>}
-            <button className="checkout-button" type="submit" disabled={checkoutStatus.state === "loading" || !cartLines.length}>
-              {checkoutStatus.state === "loading" ? "Enviando pedido..." : checkoutStep < 3 ? "Continuar" : "Finalizar compra"}
-            </button>
-          </div>
-        </form>
-      </aside>
+      <CartDrawer
+        buildWhatsAppMessage={buildWhatsAppMessage}
+        cartLines={cartLines}
+        cartSubtotal={cartSubtotal}
+        cartTotal={cartTotal}
+        checkout={checkout}
+        checkoutStatus={checkoutStatus}
+        checkoutStep={checkoutStep}
+        clearCart={clearCart}
+        currentShippingCost={currentShippingCost}
+        isCartOpen={isCartOpen}
+        setCartOpen={setCartOpen}
+        setCheckoutStep={setCheckoutStep}
+        submitOrder={submitOrder}
+        updateCartColor={updateCartColor}
+        updateCartSize={updateCartSize}
+        updateCheckout={updateCheckout}
+        updateQuantity={updateQuantity}
+        whatsappNumber={whatsappNumber}
+      />
 
       <aside className={`mobile-menu ${isMenuOpen ? "is-open" : ""}`} aria-label="Menu mobile" aria-hidden={!isMenuOpen}>
         <div className="mobile-menu-top">
