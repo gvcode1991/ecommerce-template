@@ -11,7 +11,7 @@ import { uploadProductImage } from "./services/cloudinaryService.js";
 import { sendAccountConfirmationEmail, isEmailConfigured, verifyEmailConnection } from "./services/emailService.js";
 import { createAdminSessionToken, createSessionToken, verifySessionToken } from "./services/authService.js";
 import { attachPurchaseToUser, authenticateUser, confirmUserEmail, getUserByEmail, isVerifiedUserEmail, listUsers, registerUser, setFavorite, updateUserPreferences, updateUserRole } from "./services/usersService.js";
-import { isWhatsAppAutomationConfigured, notifyAdminOrder } from "./services/whatsappService.js";
+import { notifyAdminOrder } from "./services/whatsappService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -56,7 +56,6 @@ export function createApp() {
       health.mongoConfigured = Boolean(process.env.MONGODB_URI);
       health.cloudinaryConfigured = Boolean(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
       health.emailConfigured = isEmailConfigured();
-      health.whatsappConfigured = isWhatsAppAutomationConfigured();
       health.mongoState = mongoose.connection.readyState;
     }
 
