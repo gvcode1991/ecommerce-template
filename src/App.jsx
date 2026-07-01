@@ -926,17 +926,11 @@ export default function App() {
               <h2>Productos destacados</h2>
               {catalogStatus.state === "fallback" && <p className="catalog-note">{catalogStatus.message}</p>}
             </div>
-            <div className="shop-tools" role="search">
-              <label className="search-box">
-                <span>Buscar</span>
-                <div className="search-input">
-                  <Search size={18} />
-                  <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="Boca, River, Argentina..." />
-                </div>
-              </label>
-              <select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="Filtrar categoria">
-                {categories.map((item) => <option value={item} key={item}>{item}</option>)}
-              </select>
+            <div className="catalog-shortcuts" aria-label="Categorias del catalogo">
+              <button className={category === "Todos" ? "is-active" : ""} type="button" onClick={() => { setQuery(""); setCategory("Todos"); }}>Catalogo completo</button>
+              <button className={category === "Selecciones" ? "is-active" : ""} type="button" onClick={() => { setQuery(""); setCategory("Selecciones"); }}>Remeras de selecciones</button>
+              <button className={category === "Conjuntos" ? "is-active" : ""} type="button" onClick={() => { setQuery(""); setCategory("Conjuntos"); }}>Conjuntos deportivos</button>
+              <button className={category === "Accesorios" ? "is-active" : ""} type="button" onClick={() => { setQuery(""); setCategory("Accesorios"); }}>Relojes y accesorios</button>
             </div>
           </div>
 
