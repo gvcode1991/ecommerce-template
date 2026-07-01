@@ -1,8 +1,8 @@
-import { Edit3, Facebook, Heart, Home, Instagram, Menu, MessageCircle, Minus, Plus, Save, Search, ShoppingBag, Trash2, UserRound, X } from "lucide-react";
+import { Edit3, Facebook, Heart, Home, Instagram, Menu, Minus, Plus, Save, Search, ShoppingBag, Trash2, UserRound, X } from "lucide-react";
 import React from "react";
 import { useEffect, useMemo, useState } from "react";
 
-import logoAyre from "../assets/logo-ayre.jpg";
+import logoAyre from "../assets/logo-ayre-nav.png";
 import heroImage from "../assets/camiseta-argentina-10.jpg";
 import bocaSet from "../assets/set-boca-nino.jpg";
 import bocaTrack from "../assets/conjunto-boca-azul.jpg";
@@ -773,13 +773,14 @@ export default function App() {
             <Menu size={25} />
           </button>
 
-          <a className="brand" href="/" aria-label="AyRe inicio" onClick={(event) => { event.preventDefault(); navigateTo("/"); }}>
-            <img src={logoAyre} alt="AyRe" />
-          </a>
-
           <button className="mobile-search-button" type="button" aria-label="Buscar productos" onClick={() => navigateToSection("/", "productos")}>
-            <Search size={24} />
+            <Search size={21} />
           </button>
+
+          <a className="brand" href="/" aria-label="AyRe inicio" onClick={(event) => { event.preventDefault(); navigateTo("/"); }}>
+            <img className="brand-mark" src={logoAyre} alt="" />
+            <span className="brand-name">AyRe</span>
+          </a>
 
           <label className="header-search">
             <Search size={24} />
@@ -797,8 +798,12 @@ export default function App() {
             </button>
           </div>
 
+          <button className="mobile-account-button" type="button" aria-label="Mi cuenta" onClick={() => navigateTo("/cuenta")}>
+            <UserRound size={20} />
+          </button>
+
           <button className="icon-action cart-button" type="button" aria-label="Abrir carrito" onClick={() => setCartOpen(true)}>
-            <ShoppingBag size={22} />
+            <ShoppingBag size={20} />
             <strong>{cartQuantity}</strong>
           </button>
         </div>
@@ -1196,10 +1201,6 @@ export default function App() {
           <span className="version-mark">v{appVersion}</span>
         </div>
       </footer>
-
-      <a className="floating-whatsapp" href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noreferrer" aria-label="Contactar por WhatsApp">
-        <MessageCircle size={30} />
-      </a>
 
       <aside className={`cart-panel ${isCartOpen ? "is-open" : ""}`} aria-label="Carrito" aria-hidden={!isCartOpen}>
         <div className="cart-header">

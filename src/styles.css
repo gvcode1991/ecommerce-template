@@ -69,16 +69,30 @@ a { color: inherit; text-decoration: none; }
 
 .brand {
   justify-self: start;
-  display: grid;
-  width: 132px;
+  display: inline-flex;
+  width: auto;
   height: 58px;
-  place-items: center;
+  align-items: center;
+  gap: 9px;
   padding: 3px;
   background: transparent;
   border: 0;
   border-radius: 0;
 }
-.brand img { width: 100%; height: 100%; object-fit: contain; }
+.brand-mark {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  object-position: center 30%;
+  border-radius: 999px;
+}
+.brand-name {
+  color: #6f5a48;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.58rem;
+  font-weight: 400;
+  line-height: 1;
+}
 
 .header-search {
   display: flex;
@@ -168,12 +182,15 @@ a { color: inherit; text-decoration: none; }
   box-shadow: 0 12px 30px rgba(50, 37, 27, 0.07);
 }
 .menu-button { grid-area: menu; justify-self: start; }
+.mobile-account-button { grid-area: account; justify-self: center; }
 .cart-button { grid-area: cart; justify-self: end; }
 .mobile-search-button { grid-area: mobile-search; justify-self: end; }
 .menu-button,
 .cart-button,
-.mobile-search-button { display: none; }
-.mobile-search-button {
+.mobile-search-button,
+.mobile-account-button { display: none; }
+.mobile-search-button,
+.mobile-account-button {
   width: 44px;
   height: 44px;
   place-items: center;
@@ -770,21 +787,6 @@ h2 { margin-bottom: 0; font-size: clamp(1.9rem, 3.5vw, 3.15rem); font-weight: 62
   font-weight: 650;
 }
 
-.floating-whatsapp {
-  position: fixed;
-  right: max(20px, env(safe-area-inset-right));
-  bottom: max(22px, env(safe-area-inset-bottom));
-  z-index: 35;
-  display: grid;
-  width: 64px;
-  height: 64px;
-  place-items: center;
-  border-radius: 999px;
-  background: #27d045;
-  color: #fff;
-  box-shadow: 0 16px 38px rgba(39, 208, 69, 0.36);
-}
-
 .cart-panel { position: fixed; top: 0; right: 0; z-index: 50; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; width: min(460px, 100vw); height: 100dvh; background: var(--surface); box-shadow: var(--shadow); transform: translateX(105%); transition: transform 190ms ease; overscroll-behavior: contain; }
 .cart-panel.is-open { transform: translateX(0); }
 .cart-header, .cart-footer { padding: 22px; border-bottom: 1px solid var(--line); }
@@ -1151,38 +1153,59 @@ h2 { margin-bottom: 0; font-size: clamp(1.9rem, 3.5vw, 3.15rem); font-weight: 62
     border-bottom: 1px solid rgba(36, 25, 19, 0.08);
   }
   .header-main {
-    grid-template-columns: 48px 1fr 44px 48px;
-    grid-template-areas: "menu brand mobile-search cart";
-    gap: 6px;
-    min-height: 76px;
-    padding: 8px 18px;
+    grid-template-columns: 36px 36px minmax(112px, 1fr) 36px 40px;
+    grid-template-areas: "menu mobile-search brand account cart";
+    gap: 4px;
+    min-height: 66px;
+    padding: 8px 13px;
     overflow: hidden;
   }
   .main-nav { display: none; }
   .brand {
     grid-area: brand;
-    justify-self: start;
+    justify-self: center;
     position: relative;
     z-index: 2;
-    width: 96px;
-    height: 58px;
+    height: 46px;
     transform: none;
-    margin-left: 2px;
+    margin-left: 0;
+    gap: 6px;
+  }
+  .brand-mark {
+    width: 38px;
+    height: 38px;
+  }
+  .brand-name {
+    font-size: 1.22rem;
   }
   .header-search,
   .header-actions { display: none; }
   .menu-button,
   .cart-button { display: inline-flex; }
-  .mobile-search-button { display: grid; }
+  .mobile-search-button,
+  .mobile-account-button { display: grid; }
   .icon-action {
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
     border-color: transparent;
     background: transparent;
     color: var(--ink);
     box-shadow: none;
   }
-  .cart-button strong { border-color: white; background: #625349; }
+  .mobile-search-button,
+  .mobile-account-button {
+    width: 36px;
+    height: 36px;
+  }
+  .cart-button strong {
+    top: -3px;
+    right: -4px;
+    min-width: 18px;
+    height: 18px;
+    border-color: white;
+    background: #625349;
+    font-size: 0.64rem;
+  }
   .hero { min-height: calc(100svh - 74px); align-items: end; background: linear-gradient(0deg, rgba(31, 47, 53, 0.86) 0%, rgba(31, 47, 53, 0.34) 48%, rgba(31, 47, 53, 0.08) 100%), var(--hero-image) center / cover no-repeat; padding-bottom: 34px; }
   .shipping-band {
     min-height: 42px;
@@ -1290,12 +1313,6 @@ h2 { margin-bottom: 0; font-size: clamp(1.9rem, 3.5vw, 3.15rem); font-weight: 62
   }
   .footer-links {
     width: 100%;
-  }
-  .floating-whatsapp {
-    width: 58px;
-    height: 58px;
-    right: 22px;
-    bottom: max(22px, env(safe-area-inset-bottom));
   }
 }
 
