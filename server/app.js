@@ -6,7 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { createOrder, listOrders } from "./services/ordersService.js";
-import { createProduct, deleteProduct, getAvailableStock, getProductById, listProducts, updateProduct } from "./services/productsService.js";
+import { createProduct, decrementProductStock, deleteProduct, getAvailableStock, getProductById, listProducts, updateProduct } from "./services/productsService.js";
 import { uploadProductImage } from "./services/cloudinaryService.js";
 import { sendAccountConfirmationEmail, isEmailConfigured, verifyEmailConnection } from "./services/emailService.js";
 import { createAdminSessionToken, createSessionToken, verifySessionToken } from "./services/authService.js";
@@ -17,6 +17,7 @@ const __dirname = path.dirname(__filename);
 const clientDistPath = path.resolve(__dirname, "../dist");
 const freeShippingThreshold = 60000;
 const shippingCost = 4500;
+const adminWhatsappNumber = process.env.ADMIN_WHATSAPP_NUMBER || process.env.VITE_WHATSAPP_NUMBER || "";
 const isProduction = process.env.NODE_ENV === "production" || Boolean(process.env.RENDER);
 const rateLimitStore = new Map();
 const upload = multer({
@@ -402,7 +403,12 @@ export function createApp() {
         await attachPurchaseToUser(customer.email, result.order.id);
       }
 
-      response.status(201).json(result);
+      await decrementProductStock(orderItems);
+
+      response.status(201).json({
+        ...result,
+        adminWhatsAppUrl: buildAdminWhatsAppUrl(result.order),
+      });
     } catch (error) {
       next(error);
     }
@@ -523,4 +529,25 @@ function requireSameUser(request, response, next) {
   }
 
   next();
+}
+
+function buildAdminWhatsAppUrl(order) {
+  if (!adminWhatsappNumber || !order) {
+    return "";
+  }
+
+  const lines = [
+    `Nuevo pedido AyRe: ${order.id}`,
+    `Cliente: ${order.customer?.name || ""}`,
+    `Telefono: ${order.customer?.phone || ""}`,
+    `Email: ${order.customer?.email || ""}`,
+    `Entrega: ${order.fulfillment?.delivery || ""}${order.fulfillment?.address ? ` - ${order.fulfillment.address}` : ""}`,
+    `Pago: ${order.payment || ""}`,
+    "Productos:",
+    ...(order.items || []).map((item) => `- ${item.name} talle ${item.size}${item.color ? ` color ${item.color}` : ""} x${item.quantity}`),
+    `Total: $ ${Number(order.total || 0).toLocaleString("es-AR")}`,
+    order.notes ? `Notas: ${order.notes}` : "",
+  ].filter(Boolean);
+
+  return `https://wa.me/${adminWhatsappNumber}?text=${encodeURIComponent(lines.join("\n"))}`;
 }

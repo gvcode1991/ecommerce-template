@@ -728,7 +728,11 @@ export default function App() {
 
       setCart([]);
       setCheckout(emptyCheckout);
-      setCheckoutStatus({ state: "success", message: `Pedido recibido: ${data.order.id}. Te contactamos para coordinar.` });
+      await loadProducts();
+      if (data.adminWhatsAppUrl) {
+        window.open(data.adminWhatsAppUrl, "_blank", "noopener,noreferrer");
+      }
+      setCheckoutStatus({ state: "success", message: `Pedido recibido: ${data.order.id}. Carrito vaciado y stock actualizado.` });
       if (checkout.email && userAccount?.email === checkout.email.toLowerCase()) {
         const userResponse = await fetch(`${apiUrl}/users/${encodeURIComponent(userAccount.email)}`, { headers: authHeaders() });
         if (userResponse.ok) {

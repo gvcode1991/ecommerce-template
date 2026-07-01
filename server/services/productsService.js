@@ -72,6 +72,27 @@ export async function deleteProduct(id) {
   return result.deletedCount > 0;
 }
 
+export async function decrementProductStock(items) {
+  const database = await connectToDatabase();
+
+  if (!database.connected) {
+    items.forEach((item) => {
+      const product = memoryProducts.find((productItem) => productItem.id === item.id);
+      if (!product) return;
+      product.stock = decrementStock(product.stock, item.size, item.quantity);
+    });
+    return;
+  }
+
+  await seedProductsIfNeeded();
+  await Promise.all(items.map(async (item) => {
+    const product = await Product.findOne({ id: item.id });
+    if (!product) return;
+    product.stock = decrementStock(product.stock, item.size, item.quantity);
+    await product.save();
+  }));
+}
+
 async function getProducts() {
   const database = await connectToDatabase();
 
@@ -236,6 +257,19 @@ function mergeStock(stock) {
   });
 
   return [...stockMap.entries()].map(([size, quantity]) => ({ size, quantity }));
+}
+
+function decrementStock(stockData, size, quantity) {
+  const normalizedSize = String(size || "").trim().toLowerCase();
+  const quantityToRemove = Math.max(0, Number(quantity || 0));
+
+  return normalizeStock(stockData).map((item) => {
+    if (item.size.toLowerCase() !== normalizedSize) {
+      return item;
+    }
+
+    return { ...item, quantity: Math.max(0, item.quantity - quantityToRemove) };
+  });
 }
 
 function slugify(text) {
