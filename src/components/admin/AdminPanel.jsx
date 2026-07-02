@@ -13,11 +13,9 @@ export function AdminPanel({
   products,
   removeProduct,
   resetProductForm,
-  setAdminLogin,
-  setAdminToken,
-  setAdminUnlocked,
   submitProduct,
   unlockAdmin,
+  updateAdminLogin,
   updateProductForm,
   updateProductImageFile,
   uploadProductImage,
@@ -37,11 +35,11 @@ export function AdminPanel({
         <h3>Acceso admin</h3>
         <label>
           Email admin
-          <input value={adminLogin.email} onChange={(event) => { setAdminLogin((current) => ({ ...current, email: event.target.value })); setAdminUnlocked(false); setAdminToken(""); }} type="email" placeholder="admin@ayre.com.ar" />
+          <input value={adminLogin.email} onChange={(event) => updateAdminLogin("email", event.target.value)} type="email" placeholder="admin@ayre.com.ar" />
         </label>
         <label>
           Contrasena admin
-          <input value={adminLogin.password} onChange={(event) => { setAdminLogin((current) => ({ ...current, password: event.target.value })); setAdminUnlocked(false); setAdminToken(""); }} type="password" placeholder="Contrasena privada" />
+          <input value={adminLogin.password} onChange={(event) => updateAdminLogin("password", event.target.value)} type="password" placeholder="Contrasena privada" />
         </label>
         {adminStatus.message && <p className={`checkout-message ${adminStatus.state}`}>{adminStatus.message}</p>}
         <button className="secondary-admin-button" type="submit">Desbloquear panel</button>
