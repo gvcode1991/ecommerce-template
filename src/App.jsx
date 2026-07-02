@@ -24,16 +24,16 @@ import {
   storeInfo,
   visibleCategoryShortcuts,
 } from "./config/storeConfig";
-import { AdminProvider, useAdminContext } from "./contexts/AdminContext";
+import { AdminProvider } from "./contexts/AdminContext";
 import { CartProvider, useCartContext } from "./contexts/CartContext";
 import { StoreProvider, useStoreContext } from "./contexts/StoreContext";
 import { UserProvider } from "./contexts/UserContext";
+import { useAdminAuth } from "./hooks/useAdminAuth";
 import { useAdminProducts } from "./hooks/useAdminProducts";
 import { useCheckout } from "./hooks/useCheckout";
 import { useProductImageUpload } from "./hooks/useProductImageUpload";
 import { useProducts } from "./hooks/useProducts";
 import { useUserAccount } from "./hooks/useUserAccount";
-import { loginAdmin } from "./services/adminApi";
 import { formatter } from "./utils/formatters";
 import { getProductSizes, stockTotal } from "./utils/stock";
 
@@ -88,11 +88,10 @@ function AppContent() {
     adminLogin,
     adminStatus,
     adminUnlocked,
-    setAdminLogin,
     setAdminStatus,
-    setAdminToken,
-    setAdminUnlocked,
-  } = useAdminContext();
+    unlockAdmin,
+    updateAdminLogin,
+  } = useAdminAuth();
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("Todos");
@@ -216,26 +215,6 @@ function AppContent() {
     setCategory(nextCategory);
     setMenuOpen(false);
     navigateToSection("/", "productos");
-  }
-
-  async function unlockAdmin(event) {
-    event.preventDefault();
-    setAdminStatus({ state: "loading", message: "Iniciando sesion admin..." });
-
-    try {
-      const { response, data } = await loginAdmin(adminLogin);
-
-      if (!response.ok) {
-        throw new Error(data.message || "Credenciales admin incorrectas.");
-      }
-
-      setAdminToken(data.token || "");
-      setAdminUnlocked(true);
-      setAdminStatus({ state: "success", message: "Panel admin desbloqueado." });
-    } catch (error) {
-      setAdminUnlocked(false);
-      setAdminStatus({ state: "error", message: error.message });
-    }
   }
 
   function closeLayers() {
@@ -372,11 +351,9 @@ function AppContent() {
             products={products}
             removeProduct={removeProduct}
             resetProductForm={resetProductForm}
-            setAdminLogin={setAdminLogin}
-            setAdminToken={setAdminToken}
-            setAdminUnlocked={setAdminUnlocked}
             submitProduct={submitProduct}
             unlockAdmin={unlockAdmin}
+            updateAdminLogin={updateAdminLogin}
             updateProductForm={updateProductForm}
             updateProductImageFile={updateProductImageFile}
             uploadProductImage={uploadProductImage}
