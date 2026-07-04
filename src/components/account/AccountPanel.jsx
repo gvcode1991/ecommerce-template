@@ -7,6 +7,7 @@ export function AccountPanel({
   accountLookup,
   isRegisterRoute,
   loadAccount,
+  resendConfirmation,
   saveAccountPreferences,
   submitUser,
   updateAccountLookup,
@@ -40,7 +41,13 @@ export function AccountPanel({
           <div className="account-summary">
             <h3>{userAccount ? userAccount.name : accountContent.register.pendingTitle}</h3>
             <p>{userAccount ? userAccount.email : accountContent.register.pendingText}</p>
+            {userAccount?.phone && <p>Telefono: {userAccount.phone}</p>}
             <strong>{userAccount?.emailVerified ? accountContent.register.activeStatus : accountContent.register.pendingStatus}</strong>
+            {userAccount && !userAccount.emailVerified && (
+              <button className="secondary-action account-resend" type="button" onClick={resendConfirmation}>
+                {accountContent.account.resendConfirmationButton}
+              </button>
+            )}
           </div>
         </div>
       </section>
@@ -56,19 +63,29 @@ export function AccountPanel({
           <p className="catalog-note">{accountContent.account.note}</p>
         </div>
       </div>
-      <div className="account-layout">
-        <form className="admin-form" onSubmit={loadAccount}>
-          <h3>{accountContent.account.loginTitle}</h3>
-          <label>{accountContent.account.emailLabel}<input value={accountLookup.email} onChange={(event) => updateAccountLookup("email", event.target.value)} type="email" required /></label>
-          <label>{accountContent.account.passwordLabel}<input value={accountLookup.password} onChange={(event) => updateAccountLookup("password", event.target.value)} type="password" required /></label>
-          <button className="checkout-button" type="submit">{accountContent.account.loginButton}</button>
-          {userStatus.message && <p className={`checkout-message ${userStatus.state}`}>{userStatus.message}</p>}
-        </form>
+      <div className={userAccount ? "account-layout account-layout-authenticated" : "account-layout"}>
+        {!userAccount && (
+          <form className="admin-form" onSubmit={loadAccount}>
+            <h3>{accountContent.account.loginTitle}</h3>
+            <label>{accountContent.account.emailLabel}<input value={accountLookup.email} onChange={(event) => updateAccountLookup("email", event.target.value)} type="email" required /></label>
+            <label>{accountContent.account.passwordLabel}<input value={accountLookup.password} onChange={(event) => updateAccountLookup("password", event.target.value)} type="password" required /></label>
+            <button className="checkout-button" type="submit">{accountContent.account.loginButton}</button>
+            {userStatus.message && <p className={`checkout-message ${userStatus.state}`}>{userStatus.message}</p>}
+          </form>
+        )}
         <div className="account-summary">
-          <h3>{userAccount ? userAccount.email : accountContent.account.emptyTitle}</h3>
-          <p>{userAccount ? `Estado: ${userAccount.emailVerified ? accountContent.account.activeState : accountContent.account.pendingState}` : accountContent.account.emptyText}</p>
+          <h3>{userAccount ? userAccount.name : accountContent.account.emptyTitle}</h3>
+          <p>{userAccount ? `Email: ${userAccount.email}` : accountContent.account.emptyText}</p>
           {userAccount && (
             <>
+              <p>Usuario: {userAccount.name}</p>
+              <p>Telefono: {userAccount.phone || "Sin telefono registrado"}</p>
+              <p>Estado: {userAccount.emailVerified ? accountContent.account.activeState : accountContent.account.pendingState}</p>
+              {!userAccount.emailVerified && (
+                <button className="secondary-action account-resend" type="button" onClick={resendConfirmation}>
+                  {accountContent.account.resendConfirmationButton}
+                </button>
+              )}
               <label className="checkbox-label account-check"><input checked={Boolean(userAccount.acceptsMarketing)} onChange={(event) => saveAccountPreferences(event.target.checked)} type="checkbox" /> {accountContent.account.notificationsLabel}</label>
               <strong>{accountContent.account.favoritesLabel}: {(userAccount.favorites || []).length}</strong>
               <strong>{accountContent.account.purchasesLabel}: {(userAccount.purchases || []).length}</strong>

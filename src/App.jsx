@@ -143,6 +143,7 @@ function AppContent() {
   const {
     accountLookup,
     loadAccount: loadUserAccount,
+    resendConfirmation,
     saveAccountPreferences,
     setUserAccount,
     submitUser,
@@ -188,6 +189,7 @@ function AppContent() {
   const isAdminRoute = currentPath === "/admin";
   const isRegisterRoute = currentPath === "/registro";
   const isAccountRoute = currentPath === "/cuenta";
+  const isProductRoute = currentPath.startsWith("/producto/");
 
   useEffect(() => {
     document.body.classList.toggle("has-open-layer", isCartOpen || isMenuOpen);
@@ -203,6 +205,24 @@ function AppContent() {
   function navigateToSection(path, sectionId) {
     navigateTo(path);
     window.setTimeout(() => document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth" }), 100);
+  }
+
+  function openNavigationLink(event, link) {
+    event.preventDefault();
+
+    if (link.path) {
+      navigateTo(link.path);
+      return;
+    }
+
+    if (link.href?.startsWith("#")) {
+      navigateToSection("/", link.href.slice(1));
+      return;
+    }
+
+    if (link.href) {
+      navigateTo(link.href);
+    }
   }
 
   function searchFromMobile(value) {
@@ -237,20 +257,11 @@ function AppContent() {
         setMenuOpen={setMenuOpen}
         setQuery={setQuery}
         storeInfo={activeStoreInfo}
+        userAccount={userAccount}
       />
 
-      <main id={isAdminRoute ? "admin" : isRegisterRoute ? "registro" : isAccountRoute ? "cuenta" : "inicio"}>
-        {!isAdminRoute && !isRegisterRoute && !isAccountRoute && (
-          <>
-        <Hero cssImageUrl={cssImageUrl} heroContent={activeHeroContent} images={storeImages} />
-
-        <section className="shipping-band" aria-label="Beneficio de envio">
-          <div>
-            {activeShippingTickerItems.map((item, index) => <span key={`${item}-${index}`}>{item}</span>)}
-          </div>
-        </section>
-
-        {selectedProduct && (
+      <main id={isAdminRoute ? "admin" : isRegisterRoute ? "registro" : isAccountRoute ? "cuenta" : isProductRoute ? "producto" : "inicio"}>
+        {isProductRoute && selectedProduct && (
           <section className="product-detail" aria-label={`Detalle de ${selectedProduct.name}`}>
             <button className="text-link detail-back" type="button" onClick={() => navigateTo("/")}>Volver al catalogo</button>
             <div className="product-detail-layout">
@@ -285,6 +296,23 @@ function AppContent() {
             </div>
           </section>
         )}
+
+        {isProductRoute && !selectedProduct && (
+          <section className="product-detail" aria-live="polite">
+            <button className="text-link detail-back" type="button" onClick={() => navigateTo("/")}>Volver al catalogo</button>
+            <p className="empty-state">No encontramos este producto.</p>
+          </section>
+        )}
+
+        {!isAdminRoute && !isRegisterRoute && !isAccountRoute && !isProductRoute && (
+          <>
+        <Hero cssImageUrl={cssImageUrl} heroContent={activeHeroContent} images={storeImages} />
+
+        <section className="shipping-band" aria-label="Beneficio de envio">
+          <div>
+            {activeShippingTickerItems.map((item, index) => <span key={`${item}-${index}`}>{item}</span>)}
+          </div>
+        </section>
 
         <section className="intro-band" id="coleccion" aria-label={`Valores de ${activeStoreInfo.name}`}>
           {activeIntroHighlights.map((highlight) => (
@@ -365,6 +393,7 @@ function AppContent() {
             accountLookup={accountLookup}
             isRegisterRoute={isRegisterRoute}
             loadAccount={loadAccount}
+            resendConfirmation={resendConfirmation}
             saveAccountPreferences={saveAccountPreferences}
             submitUser={submitUser}
             updateAccountLookup={updateAccountLookup}
@@ -375,7 +404,7 @@ function AppContent() {
           />
         )}
 
-        {!isAdminRoute && !isRegisterRoute && !isAccountRoute && (
+        {!isAdminRoute && !isRegisterRoute && !isAccountRoute && !isProductRoute && (
         <section className="contact-band" id="contacto">
           <div className="shipping-icon" aria-hidden="true">
             <Truck size={38} />
@@ -398,9 +427,9 @@ function AppContent() {
           <details>
             <summary>{activeFooterContent.navigationTitle}</summary>
             {activeFooterNavigationLinks.map((link) => link.path ? (
-              <a href={link.path} onClick={(event) => { event.preventDefault(); navigateTo(link.path); }} key={link.label}>{link.label}</a>
+              <a href={link.path} onClick={(event) => openNavigationLink(event, link)} key={link.label}>{link.label}</a>
             ) : (
-              <a href={link.href} key={link.label}>{link.label}</a>
+              <a href={link.href} onClick={(event) => openNavigationLink(event, link)} key={link.label}>{link.label}</a>
             ))}
           </details>
           <details>

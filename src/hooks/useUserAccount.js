@@ -1,11 +1,12 @@
 import { orderMessages } from "../config/storeConfig";
 import { useUserContext } from "../contexts/UserContext";
-import { loginUser, registerUser, updateFavorite, updatePreferences } from "../services/usersApi";
+import { loginUser, registerUser, resendConfirmationEmail, updateFavorite, updatePreferences } from "../services/usersApi";
 
 export function useUserAccount({ navigateTo }) {
   const {
     accountLookup,
     setAccountLookup,
+    emptyUserForm,
     setUserAccount,
     setUserForm,
     setUserStatus,
@@ -36,6 +37,7 @@ export function useUserAccount({ navigateTo }) {
       setUserAccount(data.user);
       setUserToken(data.token || "");
       setAccountLookup({ email: data.user.email, password: "" });
+      setUserForm(emptyUserForm);
       const emailSent = Boolean(data.email?.sent);
       setUserStatus({
         state: emailSent ? "success" : "error",
@@ -45,6 +47,25 @@ export function useUserAccount({ navigateTo }) {
       });
     } catch (error) {
       setUserStatus({ state: "error", message: `${error.message} ${orderMessages.apiErrorSuffix}` });
+    }
+  }
+
+  async function resendConfirmation() {
+    if (!userAccount?.email || userAccount.emailVerified) return;
+
+    setUserStatus({ state: "loading", message: "Reenviando email de confirmacion..." });
+
+    try {
+      const { response, data } = await resendConfirmationEmail(userAccount.email, { headers: authHeaders() });
+
+      if (!response.ok) {
+        throw new Error(data.message || "No pudimos reenviar el email de confirmacion.");
+      }
+
+      setUserAccount(data.user);
+      setUserStatus({ state: "success", message: "Te reenviamos el email de confirmacion." });
+    } catch (error) {
+      setUserStatus({ state: "error", message: error.message });
     }
   }
 
@@ -124,6 +145,7 @@ export function useUserAccount({ navigateTo }) {
     loadAccount,
     saveAccountPreferences,
     setUserAccount,
+    resendConfirmation,
     submitUser,
     toggleFavorite,
     updateAccountLookup,

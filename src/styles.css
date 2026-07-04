@@ -173,6 +173,22 @@ a { color: inherit; text-decoration: none; }
   font-size: 0.86rem;
   font-weight: 420;
 }
+.user-action.is-active-user::after,
+.mobile-account-button.is-active-user::after {
+  content: "";
+  position: absolute;
+  top: 7px;
+  right: 12px;
+  width: 9px;
+  height: 9px;
+  border: 2px solid white;
+  border-radius: 999px;
+  background: #16a34a;
+}
+.mobile-account-button.is-active-user::after {
+  top: 6px;
+  right: 7px;
+}
 
 .header-cart strong {
   position: absolute;
@@ -226,6 +242,7 @@ a { color: inherit; text-decoration: none; }
 .mobile-account-button { display: inline-flex; }
 .mobile-search-button,
 .mobile-account-button {
+  position: relative;
   width: 40px;
   height: 40px;
   align-items: center;
@@ -712,6 +729,9 @@ h2 { margin-bottom: 0; font-size: clamp(1.9rem, 3.5vw, 3.15rem); font-weight: 62
   gap: 22px;
   align-items: stretch;
 }
+.account-layout-authenticated {
+  grid-template-columns: minmax(0, 1fr);
+}
 .account-summary {
   display: grid;
   align-content: center;
@@ -734,6 +754,12 @@ h2 { margin-bottom: 0; font-size: clamp(1.9rem, 3.5vw, 3.15rem); font-weight: 62
 }
 .account-summary strong {
   color: var(--clay);
+}
+.account-resend {
+  width: fit-content;
+  border-color: var(--line);
+  background: var(--ink);
+  color: white;
 }
 .account-check {
   color: var(--ink);

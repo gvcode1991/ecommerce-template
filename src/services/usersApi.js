@@ -19,3 +19,7 @@ export function updateFavorite(email, productId, data, options = {}) {
 export function updatePreferences(email, data, options = {}) {
   return apiPut(`/users/${encodeURIComponent(email)}/preferences`, data, options);
 }
+
+export function resendConfirmationEmail(email, options = {}) {
+  return apiPost(`/users/${encodeURIComponent(email)}/resend-confirmation`, {}, options);
+}

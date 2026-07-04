@@ -14,7 +14,29 @@ export function Header({
   setMenuOpen,
   setQuery,
   storeInfo,
+  userAccount,
 }) {
+  const isUserSignedIn = Boolean(userAccount?.email);
+
+  function openNavigationLink(event, link) {
+    if (link.external) return;
+    event.preventDefault();
+
+    if (link.path) {
+      navigateTo(link.path);
+      return;
+    }
+
+    if (link.href?.startsWith("#")) {
+      navigateToSection("/", link.href.slice(1));
+      return;
+    }
+
+    if (link.href) {
+      navigateTo(link.href);
+    }
+  }
+
   return (
     <header className="site-header">
       <div className="header-main">
@@ -38,8 +60,8 @@ export function Header({
 
         <div className="header-actions" aria-label="Accesos rapidos">
           <a href="/cuenta" aria-label={headerActions.favorites} onClick={(event) => { event.preventDefault(); navigateTo("/cuenta"); }}><Heart size={24} /><span>{headerActions.favorites}</span></a>
-          <a href="/cuenta" aria-label={headerActions.account} onClick={(event) => { event.preventDefault(); navigateTo("/cuenta"); }}><UserRound size={23} /><span>{headerActions.account}</span></a>
-          <a href="#contacto" aria-label={headerActions.stores}><Home size={23} /><span>{headerActions.stores}</span></a>
+          <a className={isUserSignedIn ? "user-action is-active-user" : "user-action"} href="/cuenta" aria-label={headerActions.account} onClick={(event) => { event.preventDefault(); navigateTo("/cuenta"); }}><UserRound size={23} /><span>{headerActions.account}</span></a>
+          <a href="#contacto" aria-label={headerActions.stores} onClick={(event) => { event.preventDefault(); navigateToSection("/", "contacto"); }}><Home size={23} /><span>{headerActions.stores}</span></a>
           <button className="header-cart" type="button" aria-label="Abrir carrito" onClick={() => setCartOpen(true)}>
             <ShoppingBag size={24} />
             <span>{headerActions.cart}</span>
@@ -47,7 +69,7 @@ export function Header({
           </button>
         </div>
 
-        <button className="mobile-account-button" type="button" aria-label={headerActions.account} onClick={() => navigateTo("/cuenta")}>
+        <button className={isUserSignedIn ? "mobile-account-button is-active-user" : "mobile-account-button"} type="button" aria-label={headerActions.account} onClick={() => navigateTo("/cuenta")}>
           <UserRound size={20} />
         </button>
 
@@ -59,7 +81,7 @@ export function Header({
 
       <nav className="main-nav" aria-label="Secciones">
         {mainNavLinks.map((link) => (
-          <a href={link.href} target={link.external ? "_blank" : undefined} rel={link.external ? "noreferrer" : undefined} key={`${link.label}-${link.href}`}>
+          <a href={link.path || link.href} target={link.external ? "_blank" : undefined} rel={link.external ? "noreferrer" : undefined} onClick={(event) => openNavigationLink(event, link)} key={`${link.label}-${link.path || link.href}`}>
             {link.label}
           </a>
         ))}

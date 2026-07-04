@@ -156,6 +156,34 @@ export async function confirmUserEmail(token) {
   return user ? user.toJSON() : null;
 }
 
+export async function createEmailConfirmationForUser(email) {
+  const normalizedEmail = normalizeEmail(email);
+  const database = await connectToDatabase();
+
+  if (!database.connected) {
+    const user = memoryUsers.get(normalizedEmail);
+    if (!user) return null;
+    if (user.emailVerified) return { user: sanitizeUser(user), alreadyVerified: true };
+
+    const confirmationToken = crypto.randomBytes(24).toString("hex");
+    user.confirmationToken = confirmationToken;
+    user.confirmationSentAt = new Date().toISOString();
+    memoryUsers.set(user.email, user);
+    return { user: sanitizeUser(user), confirmationToken };
+  }
+
+  const user = await User.findOne({ email: normalizedEmail });
+  if (!user) return null;
+  if (user.emailVerified) return { user: user.toJSON(), alreadyVerified: true };
+
+  const confirmationToken = crypto.randomBytes(24).toString("hex");
+  user.confirmationToken = confirmationToken;
+  user.confirmationSentAt = new Date();
+  await user.save();
+
+  return { user: user.toJSON(), confirmationToken };
+}
+
 export async function isVerifiedUserEmail(email) {
   const user = await getUserByEmail(email);
   return Boolean(user?.emailVerified);

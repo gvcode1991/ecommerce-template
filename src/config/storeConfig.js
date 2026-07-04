@@ -162,6 +162,7 @@ export const accountContent = {
     emptyText: "Ingresa con tu email y contrasena para ver tus compras y preferencias.",
     activeState: "activa",
     pendingState: "pendiente de confirmacion",
+    resendConfirmationButton: "Reenviar email de confirmacion",
     notificationsLabel: "Recibir notificaciones al mail",
     favoritesLabel: "Favoritos",
     purchasesLabel: "Compras realizadas",

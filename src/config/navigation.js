@@ -6,7 +6,7 @@ export const mainNavLinks = [
   { label: "Conjuntos", href: "#productos" },
   { label: storeInfo.name, href: "#coleccion" },
   { label: "Contacto", href: "#contacto" },
-  { label: "Admin", href: "/admin", external: true },
+  { label: "Admin", path: "/admin" },
 ];
 
 export const headerActions = {

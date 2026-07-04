@@ -10,7 +10,7 @@ import { createProduct, decrementProductStock, deleteProduct, getAvailableStock,
 import { uploadProductImage } from "./services/cloudinaryService.js";
 import { sendAccountConfirmationEmail, isEmailConfigured, verifyEmailConnection } from "./services/emailService.js";
 import { createAdminSessionToken, createSessionToken, verifySessionToken } from "./services/authService.js";
-import { attachPurchaseToUser, authenticateUser, confirmUserEmail, deletePendingUser, getUserByEmail, isVerifiedUserEmail, listUsers, registerUser, setFavorite, updateUserPreferences, updateUserRole } from "./services/usersService.js";
+import { attachPurchaseToUser, authenticateUser, confirmUserEmail, createEmailConfirmationForUser, deletePendingUser, getUserByEmail, isVerifiedUserEmail, listUsers, registerUser, setFavorite, updateUserPreferences, updateUserRole } from "./services/usersService.js";
 import { notifyAdminOrder } from "./services/whatsappService.js";
 import { getServiceName, getStoreName } from "./config/storeConfig.js";
 
@@ -274,6 +274,32 @@ export function createApp() {
 
       response.json({ user });
     } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/users/:email/resend-confirmation", requireUser, requireSameUser, async (request, response, next) => {
+    try {
+      const result = await createEmailConfirmationForUser(request.params.email);
+
+      if (!result) {
+        response.status(404).json({ message: "Usuario no encontrado." });
+        return;
+      }
+
+      if (result.alreadyVerified) {
+        response.json({ user: result.user, email: { sent: false, reason: "already-verified" } });
+        return;
+      }
+
+      const email = await sendAccountConfirmationEmail(result.user, result.confirmationToken);
+      response.json({ user: result.user, email });
+    } catch (error) {
+      if (error.provider === "resend") {
+        response.status(502).json({ message: getEmailFailureMessage(error) });
+        return;
+      }
+
       next(error);
     }
   });
